@@ -1,0 +1,29 @@
+/* Test Page Styles */
+.test-page {
+  min-height: calc(100vh - 80px);
+  padding: 2rem 0;
+  background-color: #f8fafc;
+}
+
+.test-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.test-container h1 {
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.placeholder-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.placeholder-content ul {
+  color: #64748b;
+  line-height: 1.6;
+}
