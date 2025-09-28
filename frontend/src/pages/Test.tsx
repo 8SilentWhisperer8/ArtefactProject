@@ -84,6 +84,7 @@ const Test: React.FC = () => {
   const startNewTest = async () => {
     try {
       const response = await apiService.createSession();
+      console.log('Session created successfully:', response);
       setSessionId(response.session_id);
       setShowStartModal(false);
       const now = new Date();
@@ -346,13 +347,15 @@ const Test: React.FC = () => {
     }
 
     try {
-      await apiService.completeSession(sessionId, {
+      const result = await apiService.completeSession(sessionId, {
         completion_status: 'success',
         user_group_data: {
           outcome: 'success',
           success_notes: 'Form completed successfully'
         }
       });
+      
+      console.log('Session completed successfully:', result);
 
       // Navigate to dashboard with session ID
       navigate(`/dashboard?session=${sessionId}`);

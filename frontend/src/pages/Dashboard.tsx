@@ -73,12 +73,16 @@ const Dashboard: React.FC = () => {
         apiService.getRecentSessions()
       ]);
       
+      console.log('Dashboard Summary:', summary);
+      console.log('Recent Sessions:', sessions);
+      console.log('Sessions length:', sessions.length);
+      
       setDashboardSummary(summary);
       setRecentSessions(sessions);
       setError(null);
     } catch (err) {
       setError('Failed to load dashboard data');
-      console.error(err);
+      console.error('Dashboard loading error:', err);
     } finally {
       setLoading(false);
     }
@@ -159,6 +163,11 @@ const Dashboard: React.FC = () => {
               className="session-dropdown"
             >
               <option value="all">All Sessions</option>
+              {recentSessions.map((session) => (
+                <option key={session.session_id} value={session.session_id}>
+                  Session {session.session_id}
+                </option>
+              ))}
             </select>
             <span className="time-filter">All Time</span>
           </div>
@@ -298,14 +307,6 @@ const Dashboard: React.FC = () => {
               ))}
             </select>
             <span className="time-filter">All Time</span>
-          </div>
-
-          {/* Current Session Analytics */}
-          <div className="session-info">
-            <h2>Session Analytics: {sessionAnalytics.session_id}</h2>
-            <button onClick={refreshData} className="refresh-button">
-              🔄 Refresh Data
-            </button>
           </div>
 
           {/* Overall Performance Averages */}
