@@ -1,14 +1,18 @@
 /* Test Page Styles */
 .test-page {
   min-height: calc(100vh - 80px);
-  background-color: #f8fafc;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .test-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  width: 100%;
 }
 
 /* Modal Styles */
@@ -99,6 +103,50 @@
 .details-button:hover {
   background: #047857;
   transform: translateY(-1px);
+}
+
+/* Start Content Styles (without overlay) */
+.start-content {
+  background: white;
+  padding: 3rem;
+  border-radius: 0.75rem;
+  max-width: 600px;
+  margin: 2rem auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.start-content h2 {
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  font-size: 1.875rem;
+}
+
+.start-content p {
+  color: #64748b;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  font-size: 1.125rem;
+}
+
+/* Form Validation Styles */
+.validation-warning {
+  display: block;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.register-button.disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.register-button.disabled:hover {
+  background: #94a3b8;
+  transform: none;
 }
 
 /* Test Layout */

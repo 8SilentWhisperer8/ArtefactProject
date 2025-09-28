@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../services/api';
-import TestSave from '../components/TestSave';
 import './Test.css';
 
 interface ActivityMetrics {
@@ -11,13 +10,7 @@ interface ActivityMetrics {
   steps: number;
   backtracks: number;
   errors: number;
-}
-
-interface UsabilityMetrics {
-  effectiveness: number;
-  efficiency: number;
-  satisfaction: number;
-  usabilityIndex: number;
+  startingPoint: string;
 }
 
 const Test: React.FC = () => {
@@ -44,14 +37,8 @@ const Test: React.FC = () => {
     taskTime: '0:00',
     steps: 0,
     backtracks: 0,
-    errors: 0
-  });
-
-  const [usabilityMetrics, setUsabilityMetrics] = useState<UsabilityMetrics>({
-    effectiveness: 0,
-    efficiency: 0,
-    satisfaction: 0,
-    usabilityIndex: 0
+    errors: 0,
+    startingPoint: 'Not Started'
   });
 
   // Tracking state
@@ -59,8 +46,11 @@ const Test: React.FC = () => {
   const [lastFocusedField, setLastFocusedField] = useState<string | null>(null);
   const [fieldVisitOrder, setFieldVisitOrder] = useState<string[]>([]);
   const [extraClicks, setExtraClicks] = useState(0);
+  const [currentFocusedField, setCurrentFocusedField] = useState<string | null>(null);
+  const [fieldsTouched, setFieldsTouched] = useState<Set<string>>(new Set());
   
   const timeIntervalRef = useRef<number | null>(null);
+  const startTimeRef = useRef<Date | null>(null);
   const lastClickTimeRef = useRef<{[key: string]: number[]}>({});
 
   // Check if coming from existing session
@@ -83,13 +73,8 @@ const Test: React.FC = () => {
         taskTime: analytics.task_time,
         steps: analytics.steps,
         backtracks: analytics.backtracks,
-        errors: analytics.errors
-      });
-      setUsabilityMetrics({
-        effectiveness: analytics.effectiveness,
-        efficiency: analytics.efficiency,
-        satisfaction: analytics.satisfaction,
-        usabilityIndex: analytics.usability_index
+        errors: analytics.errors,
+        startingPoint: 'Resumed Session'
       });
     } catch (error) {
       console.error('Failed to load session:', error);
@@ -101,9 +86,12 @@ const Test: React.FC = () => {
       const response = await apiService.createSession();
       setSessionId(response.session_id);
       setShowStartModal(false);
-      setStartTime(new Date());
+      const now = new Date();
+      setStartTime(now);
+      startTimeRef.current = now;
       
-      // Start timer
+      // Start timer immediately and then every second
+      updateTimer();
       timeIntervalRef.current = setInterval(updateTimer, 1000);
     } catch (error) {
       console.error('Failed to create session:', error);
@@ -112,14 +100,20 @@ const Test: React.FC = () => {
 
   const startExistingTest = () => {
     setShowStartModal(false);
-    setStartTime(new Date());
+    const now = new Date();
+    setStartTime(now);
+    startTimeRef.current = now;
+    
+    // Start timer immediately and then every second
+    updateTimer();
     timeIntervalRef.current = setInterval(updateTimer, 1000);
   };
 
   const updateTimer = () => {
-    if (startTime) {
+    const referenceTime = startTimeRef.current;
+    if (referenceTime) {
       const now = new Date();
-      const diff = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+      const diff = Math.floor((now.getTime() - referenceTime.getTime()) / 1000);
       const minutes = Math.floor(diff / 60);
       const seconds = diff % 60;
       setActivityMetrics(prev => ({
@@ -130,15 +124,28 @@ const Test: React.FC = () => {
   };
 
   const handleFieldFocus = (fieldName: string) => {
+    // Set current focused field
+    setCurrentFocusedField(fieldName);
+    
+    // Mark field as touched
+    setFieldsTouched(prev => new Set([...prev, fieldName]));
+    
     // Track field visits and detect backtracks
     if (!fieldVisitOrder.includes(fieldName)) {
       setFieldVisitOrder(prev => [...prev, fieldName]);
-      setActivityMetrics(prev => ({
-        ...prev,
-        steps: prev.steps + 1,
-        currentStep: Math.max(prev.currentStep, getFieldStep(fieldName))
-      }));
-    } else if (lastFocusedField && getFieldStep(fieldName) < getFieldStep(lastFocusedField)) {
+    }
+    
+    // Always increment steps when navigating between fields
+    setActivityMetrics(prev => ({
+      ...prev,
+      steps: prev.steps + 1,
+      currentStep: Math.max(prev.currentStep, getFieldStep(fieldName)),
+      // Set starting point to the first field focused
+      startingPoint: prev.startingPoint === 'Not Started' ? fieldName : prev.startingPoint
+    }));
+    
+    // Check for backtracks
+    if (lastFocusedField && getFieldStep(fieldName) < getFieldStep(lastFocusedField)) {
       // Backtrack detected
       setActivityMetrics(prev => ({
         ...prev,
@@ -151,6 +158,9 @@ const Test: React.FC = () => {
   };
 
   const handleFieldBlur = (fieldName: string) => {
+    // Clear current focused field
+    setCurrentFocusedField(null);
+    
     // Validate field on blur and count errors
     const value = formData[fieldName as keyof typeof formData];
     if (value && !isFieldValid(fieldName, value)) {
@@ -198,18 +208,38 @@ const Test: React.FC = () => {
   };
 
   const isFieldValid = (fieldName: string, value: string): boolean => {
+    if (!value.trim()) return false;
+    
     switch (fieldName) {
       case 'firstName':
       case 'lastName':
-        return value.length >= 2;
+        return value.length >= 3 && /^[a-zA-Z\s]+$/.test(value);
       case 'email':
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
       case 'password':
-        return value.length >= 8;
+        return value.length >= 8 && 
+               /(?=.*[a-z])/.test(value) && 
+               /(?=.*[A-Z])/.test(value) && 
+               /(?=.*\d)/.test(value);
       case 'confirmPassword':
         return value === formData.password;
       case 'dateOfBirth':
-        return /^\d{2}\/\d{2}\/\d{4}$/.test(value);
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return false;
+        
+        const dateParts = value.split('/');
+        if (dateParts.length === 3) {
+          const day = parseInt(dateParts[0]);
+          const month = parseInt(dateParts[1]);
+          const year = parseInt(dateParts[2]);
+          
+          if (day < 1 || day > 31 || month < 1 || month > 12) return false;
+          
+          const currentYear = new Date().getFullYear();
+          const age = currentYear - year;
+          
+          if (year > currentYear || age > 120 || age < 13) return false;
+        }
+        return true;
       default:
         return true;
     }
@@ -222,7 +252,7 @@ const Test: React.FC = () => {
     const fieldsCompleted = Object.values(formData).filter(value => value.trim() !== '').length;
     
     try {
-      const analytics = await apiService.updateSessionMetrics(sessionId, {
+      await apiService.updateSessionMetrics(sessionId, {
         time_spent_sec: timeSpent,
         steps_taken: activityMetrics.steps,
         backtracks: activityMetrics.backtracks,
@@ -232,15 +262,76 @@ const Test: React.FC = () => {
         completion_status: fieldsCompleted === 6 ? 'success' : fieldsCompleted > 0 ? 'partial' : 'failure'
       });
 
-      setUsabilityMetrics({
-        effectiveness: analytics.effectiveness,
-        efficiency: analytics.efficiency,
-        satisfaction: analytics.satisfaction,
-        usabilityIndex: analytics.usability_index
-      });
+
     } catch (error) {
       console.error('Failed to update metrics:', error);
     }
+  };
+
+  const getFieldValidationMessage = (fieldName: string, value: string): string | null => {
+    if (!value.trim()) {
+      return null; // Don't show "field is required" message
+    }
+
+    switch (fieldName) {
+      case 'firstName':
+        if (value.length < 3) return 'Your name should have at least 3 letters';
+        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Your name cannot contain signs like exclamation marks or numbers';
+        return null;
+      case 'lastName':
+        if (value.length < 3) return 'Your surname should have at least 3 letters';
+        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Your surname cannot contain signs like exclamation marks or numbers';
+        return null;
+      case 'email':
+        if (!value.includes('@')) return 'Email address must contain an @ symbol';
+        if (!value.includes('.')) return 'Email address must contain a domain (like .com)';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email format (example@email.com)';
+        return null;
+      case 'password':
+        if (value.length < 8) return 'Your password is too short - needs at least 8 characters';
+        if (!/(?=.*[a-z])/.test(value)) return 'Password should contain at least one lowercase letter';
+        if (!/(?=.*[A-Z])/.test(value)) return 'Password should contain at least one uppercase letter';
+        if (!/(?=.*\d)/.test(value)) return 'Password should contain at least one number';
+        return null;
+      case 'confirmPassword':
+        if (value !== formData.password) return 'Passwords do not match - please type the same password again';
+        return null;
+      case 'dateOfBirth':
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return 'Please enter your birth date as DD/MM/YYYY';
+        
+        // Additional age validation
+        const dateParts = value.split('/');
+        if (dateParts.length === 3) {
+          const day = parseInt(dateParts[0]);
+          const month = parseInt(dateParts[1]);
+          const year = parseInt(dateParts[2]);
+          
+          if (day < 1 || day > 31) return 'Day must be between 1 and 31';
+          if (month < 1 || month > 12) return 'Month must be between 1 and 12';
+          
+          const currentYear = new Date().getFullYear();
+          const age = currentYear - year;
+          
+          if (year > currentYear) return 'You cannot be born in the future';
+          if (age > 120) return 'You cannot be over 120 years old';
+          if (age < 13) return 'You must be at least 13 years old to register';
+        }
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const isFormValid = (): boolean => {
+    return Object.entries(formData).every(([key, value]) => 
+      value.trim() !== '' && isFieldValid(key, value)
+    );
+  };
+
+  const shouldShowValidationMessage = (fieldName: string): boolean => {
+    // Show message if field is currently focused OR if field has been touched and has an error
+    return currentFocusedField === fieldName || 
+           (fieldsTouched.has(fieldName) && !isFieldValid(fieldName, formData[fieldName as keyof typeof formData]));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -248,23 +339,18 @@ const Test: React.FC = () => {
     
     if (!sessionId) return;
 
-    const fieldsCompleted = Object.values(formData).filter(value => value.trim() !== '').length;
-    const isSuccess = fieldsCompleted === 6 && Object.entries(formData).every(([key, value]) => 
-      isFieldValid(key, value)
-    );
+    // Only proceed if all fields are completed and valid
+    if (!isFormValid()) {
+      // Don't submit - validation warnings will be shown in the UI
+      return;
+    }
 
     try {
       await apiService.completeSession(sessionId, {
-        completion_status: isSuccess ? 'success' : fieldsCompleted > 0 ? 'partial' : 'failure',
+        completion_status: 'success',
         user_group_data: {
-          outcome: isSuccess ? 'success' : 'failure',
-          ...(isSuccess ? {
-            success_notes: 'Form completed successfully'
-          } : {
-            failure_steps_completed: fieldsCompleted,
-            failure_last_section: lastFocusedField || 'unknown',
-            failure_abort_reason: 'Form validation errors or incomplete fields'
-          })
+          outcome: 'success',
+          success_notes: 'Form completed successfully'
         }
       });
 
@@ -276,9 +362,26 @@ const Test: React.FC = () => {
   };
 
   const handleInputChange = (fieldName: string, value: string) => {
+    let processedValue = value;
+    
+    // Auto-format date of birth with slashes
+    if (fieldName === 'dateOfBirth') {
+      // Remove all non-digit characters
+      const digitsOnly = value.replace(/\D/g, '');
+      
+      // Format with slashes: DD/MM/YYYY
+      if (digitsOnly.length >= 5) {
+        processedValue = digitsOnly.slice(0, 2) + '/' + digitsOnly.slice(2, 4) + '/' + digitsOnly.slice(4, 8);
+      } else if (digitsOnly.length >= 3) {
+        processedValue = digitsOnly.slice(0, 2) + '/' + digitsOnly.slice(2);
+      } else {
+        processedValue = digitsOnly;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: processedValue
     }));
   };
 
@@ -311,8 +414,8 @@ const Test: React.FC = () => {
   if (showStartModal) {
     return (
       <div className="test-page">
-        <div className="modal-overlay">
-          <div className="start-modal">
+        <div className="test-container">
+          <div className="start-content">
             <h2>Usability Test</h2>
             {isNewSession ? (
               <>
@@ -364,8 +467,11 @@ const Test: React.FC = () => {
                   onFocus={() => handleFieldFocus('firstName')}
                   onBlur={() => handleFieldBlur('firstName')}
                   onClick={() => handleClick('firstName')}
-                  className={formData.firstName && !isFieldValid('firstName', formData.firstName) ? 'error' : ''}
+                  className={shouldShowValidationMessage('firstName') && getFieldValidationMessage('firstName', formData.firstName) ? 'error' : ''}
                 />
+                {shouldShowValidationMessage('firstName') && getFieldValidationMessage('firstName', formData.firstName) && (
+                  <span className="validation-warning">{getFieldValidationMessage('firstName', formData.firstName)}</span>
+                )}
               </div>
 
               <div className="form-group">
@@ -378,8 +484,11 @@ const Test: React.FC = () => {
                   onFocus={() => handleFieldFocus('lastName')}
                   onBlur={() => handleFieldBlur('lastName')}
                   onClick={() => handleClick('lastName')}
-                  className={formData.lastName && !isFieldValid('lastName', formData.lastName) ? 'error' : ''}
+                  className={shouldShowValidationMessage('lastName') && getFieldValidationMessage('lastName', formData.lastName) ? 'error' : ''}
                 />
+                {shouldShowValidationMessage('lastName') && getFieldValidationMessage('lastName', formData.lastName) && (
+                  <span className="validation-warning">{getFieldValidationMessage('lastName', formData.lastName)}</span>
+                )}
               </div>
 
               <div className="form-group">
@@ -388,13 +497,17 @@ const Test: React.FC = () => {
                   type="text"
                   id="dateOfBirth"
                   placeholder="dd/mm/yyyy"
+                  maxLength={10}
                   value={formData.dateOfBirth}
                   onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                   onFocus={() => handleFieldFocus('dateOfBirth')}
                   onBlur={() => handleFieldBlur('dateOfBirth')}
                   onClick={() => handleClick('dateOfBirth')}
-                  className={formData.dateOfBirth && !isFieldValid('dateOfBirth', formData.dateOfBirth) ? 'error' : ''}
+                  className={shouldShowValidationMessage('dateOfBirth') && getFieldValidationMessage('dateOfBirth', formData.dateOfBirth) ? 'error' : ''}
                 />
+                {shouldShowValidationMessage('dateOfBirth') && getFieldValidationMessage('dateOfBirth', formData.dateOfBirth) && (
+                  <span className="validation-warning">{getFieldValidationMessage('dateOfBirth', formData.dateOfBirth)}</span>
+                )}
               </div>
 
               <div className="form-group">
@@ -407,8 +520,11 @@ const Test: React.FC = () => {
                   onFocus={() => handleFieldFocus('email')}
                   onBlur={() => handleFieldBlur('email')}
                   onClick={() => handleClick('email')}
-                  className={formData.email && !isFieldValid('email', formData.email) ? 'error' : ''}
+                  className={shouldShowValidationMessage('email') && getFieldValidationMessage('email', formData.email) ? 'error' : ''}
                 />
+                {shouldShowValidationMessage('email') && getFieldValidationMessage('email', formData.email) && (
+                  <span className="validation-warning">{getFieldValidationMessage('email', formData.email)}</span>
+                )}
               </div>
 
               <div className="form-group">
@@ -421,8 +537,11 @@ const Test: React.FC = () => {
                   onFocus={() => handleFieldFocus('password')}
                   onBlur={() => handleFieldBlur('password')}
                   onClick={() => handleClick('password')}
-                  className={formData.password && !isFieldValid('password', formData.password) ? 'error' : ''}
+                  className={shouldShowValidationMessage('password') && getFieldValidationMessage('password', formData.password) ? 'error' : ''}
                 />
+                {shouldShowValidationMessage('password') && getFieldValidationMessage('password', formData.password) && (
+                  <span className="validation-warning">{getFieldValidationMessage('password', formData.password)}</span>
+                )}
               </div>
 
               <div className="form-group">
@@ -435,13 +554,22 @@ const Test: React.FC = () => {
                   onFocus={() => handleFieldFocus('confirmPassword')}
                   onBlur={() => handleFieldBlur('confirmPassword')}
                   onClick={() => handleClick('confirmPassword')}
-                  className={formData.confirmPassword && !isFieldValid('confirmPassword', formData.confirmPassword) ? 'error' : ''}
+                  className={shouldShowValidationMessage('confirmPassword') && getFieldValidationMessage('confirmPassword', formData.confirmPassword) ? 'error' : ''}
                 />
+                {shouldShowValidationMessage('confirmPassword') && getFieldValidationMessage('confirmPassword', formData.confirmPassword) && (
+                  <span className="validation-warning">{getFieldValidationMessage('confirmPassword', formData.confirmPassword)}</span>
+                )}
               </div>
 
               <div className="form-actions">
                 <button type="button" className="cancel-button">Cancel</button>
-                <button type="submit" className="register-button">Register</button>
+                <button 
+                  type="submit" 
+                  className={`register-button ${!isFormValid() ? 'disabled' : ''}`}
+                  disabled={!isFormValid()}
+                >
+                  Register
+                </button>
               </div>
             </form>
           </div>
@@ -450,14 +578,11 @@ const Test: React.FC = () => {
           <div className="activity-monitor">
             <h3>Activity monitor</h3>
             
-            <TestSave 
-              formData={formData} 
-              onSave={() => updateSessionMetrics()}
-            />
+
             
             <div className="current-step">
               <span className="label">Starting point:</span>
-              <span className="value">Step {activityMetrics.currentStep}</span>
+              <span className="value">{activityMetrics.startingPoint || 'Not started'}</span>
             </div>
 
             <div className="metrics-grid">
@@ -477,38 +602,17 @@ const Test: React.FC = () => {
                 <span className="metric-label">Errors:</span>
                 <span className="metric-value">{activityMetrics.errors}</span>
               </div>
+              <div className="metric-item">
+                <span className="metric-label">Extra clicks:</span>
+                <span className="metric-value">{extraClicks}</span>
+              </div>
             </div>
 
             <button onClick={seeDetails} className="see-details-button">
               See details
             </button>
 
-            {/* Usability Metrics Display */}
-            <div className="usability-metrics">
-              <h4>Usability Metrics</h4>
-              <div className="metrics-tiles">
-                <div className="metric-tile effectiveness">
-                  <div className="metric-icon">🎯</div>
-                  <div className="metric-name">Effectiveness</div>
-                  <div className="metric-score">{usabilityMetrics.effectiveness.toFixed(1)}%</div>
-                </div>
-                <div className="metric-tile efficiency">
-                  <div className="metric-icon">⚡</div>
-                  <div className="metric-name">Efficiency</div>
-                  <div className="metric-score">{usabilityMetrics.efficiency.toFixed(1)}%</div>
-                </div>
-                <div className="metric-tile satisfaction">
-                  <div className="metric-icon">😊</div>
-                  <div className="metric-name">Satisfaction</div>
-                  <div className="metric-score">{usabilityMetrics.satisfaction.toFixed(1)}%</div>
-                </div>
-                <div className="metric-tile usability-index">
-                  <div className="metric-icon">📊</div>
-                  <div className="metric-name">Usability Index</div>
-                  <div className="metric-score">{usabilityMetrics.usabilityIndex.toFixed(1)}</div>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>

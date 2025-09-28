@@ -13,7 +13,6 @@ const Header: React.FC = () => {
         <div className="logo-section">
           <Link to="/" className="logo-link">
             <img src="/src/assets/logo.png" alt="Vium Logo" className="logo" />
-            <span className="logo-text">Vium</span>
           </Link>
         </div>
 
