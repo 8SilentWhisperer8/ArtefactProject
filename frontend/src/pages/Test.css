@@ -1,29 +1,383 @@
 /* Test Page Styles */
 .test-page {
   min-height: calc(100vh - 80px);
-  padding: 2rem 0;
   background-color: #f8fafc;
+  position: relative;
 }
 
 .test-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 2rem;
 }
 
-.test-container h1 {
-  color: #1e293b;
-  margin-bottom: 1rem;
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.placeholder-content {
+.start-modal {
   background: white;
   padding: 2rem;
   border-radius: 0.75rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
-.placeholder-content ul {
+.start-modal h2 {
+  color: #1e293b;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.start-modal p {
   color: #64748b;
+  text-align: center;
+  margin-bottom: 2rem;
   line-height: 1.6;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.start-button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.secondary-button {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-button:hover {
+  background: #e2e8f0;
+}
+
+.details-button {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.details-button:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+/* Test Layout */
+.test-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Form Section */
+.form-section {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.registration-form {
+  padding: 2rem;
+}
+
+.registration-form h2 {
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-group input.error {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cancel-button {
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-button:hover {
+  background: #f3f4f6;
+}
+
+.register-button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.register-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+/* Activity Monitor */
+.activity-monitor {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 1rem;
+}
+
+.activity-monitor h3 {
+  color: #1e293b;
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.current-step {
+  background: #eff6ff;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1.5rem;
+  border-left: 3px solid #2563eb;
+}
+
+.current-step .label {
+  color: #64748b;
+  font-size: 0.875rem;
+  display: block;
+}
+
+.current-step .value {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.metrics-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.metric-label {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.metric-value {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.see-details-button {
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1.5rem;
+}
+
+.see-details-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+/* Usability Metrics */
+.usability-metrics h4 {
+  color: #1e293b;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.metrics-tiles {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.metric-tile {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.metric-tile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.metric-tile.effectiveness {
+  border-left: 3px solid #059669;
+}
+
+.metric-tile.efficiency {
+  border-left: 3px solid #dc2626;
+}
+
+.metric-tile.satisfaction {
+  border-left: 3px solid #7c3aed;
+}
+
+.metric-tile.usability-index {
+  border-left: 3px solid #ea580c;
+}
+
+.metric-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.metric-name {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.25rem;
+}
+
+.metric-score {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .test-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .activity-monitor {
+    position: static;
+  }
+  
+  .metrics-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .test-container {
+    padding: 1rem;
+  }
+  
+  .registration-form {
+    padding: 1.5rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .modal-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .modal-buttons button {
+    width: 200px;
+  }
+  
+  .metrics-tiles {
+    grid-template-columns: 1fr;
+  }
 }
