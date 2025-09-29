@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
@@ -120,6 +119,43 @@ const Dashboard: React.FC = () => {
       return recentSessions;
     }
     return recentSessions.filter(session => session.completion_status === selectedGroup);
+  };
+
+  // Calculate filtered metrics based on selected group
+  const getFilteredMetrics = () => {
+    const filteredSessions = getFilteredSessions();
+    
+    if (filteredSessions.length === 0) {
+      return {
+        total_sessions: 0,
+        successful_sessions: 0,
+        success_rate: 0,
+        avg_time_spent: 0,
+        avg_steps: 0,
+        avg_effectiveness: 0,
+        avg_efficiency: 0,
+        avg_satisfaction: 0,
+        avg_usability_index: 0,
+        avg_backtracks: 0,
+        avg_errors: 0
+      };
+    }
+
+    const successfulSessions = filteredSessions.filter(s => s.completion_status === 'success').length;
+    
+    return {
+      total_sessions: filteredSessions.length,
+      successful_sessions: successfulSessions,
+      success_rate: (successfulSessions / filteredSessions.length) * 100,
+      avg_time_spent: filteredSessions.reduce((sum, s) => sum + s.time_spent_sec, 0) / filteredSessions.length,
+      avg_steps: filteredSessions.reduce((sum, s) => sum + s.steps_taken, 0) / filteredSessions.length,
+      avg_effectiveness: filteredSessions.reduce((sum, s) => sum + s.effectiveness, 0) / filteredSessions.length,
+      avg_efficiency: filteredSessions.reduce((sum, s) => sum + s.efficiency, 0) / filteredSessions.length,
+      avg_satisfaction: filteredSessions.reduce((sum, s) => sum + s.satisfaction, 0) / filteredSessions.length,
+      avg_usability_index: filteredSessions.reduce((sum, s) => sum + s.usability_index, 0) / filteredSessions.length,
+      avg_backtracks: dashboardSummary?.avg_backtracks || 0, // Use fallback from dashboard summary
+      avg_errors: dashboardSummary?.avg_errors || 0 // Use fallback from dashboard summary
+    };
   };
 
   // Render loading state
@@ -352,194 +388,132 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-
-
-          {/* Session Detailed Analytics */}
+          {/* Session Performance Comparison Cards */}
           <div className="session-analytics-tile">
             <div className="analytics-header">
-              <h3>📊 Detailed Session Metrics</h3>
+              <h3>📊 Performance Analysis</h3>
             </div>
-            <div className="unified-analytics-grid">
-              <div className="analytics-item">
-                <div className="analytics-icon">📍</div>
-                <div className="analytics-number">{sessionAnalytics.current_step} / 6</div>
-                <div className="analytics-label">PROGRESS</div>
-              </div>
-              <div className="analytics-item">
-                <div className="analytics-icon">👣</div>
-                <div className="analytics-number">{sessionAnalytics.steps}</div>
-                <div className="analytics-label">TOTAL STEPS</div>
-              </div>
-              <div className="analytics-item">
-                <div className="analytics-icon">🔄</div>
-                <div className="analytics-number">{sessionAnalytics.backtracks}</div>
-                <div className="analytics-label">BACKTRACKS</div>
-              </div>
-              <div className="analytics-item">
-                <div className="analytics-icon">❌</div>
-                <div className="analytics-number">{sessionAnalytics.errors}</div>
-                <div className="analytics-label">ERRORS</div>
-              </div>
-              <div className="analytics-item">
-                <div className="analytics-icon">🕐</div>
-                <div className="analytics-number">{sessionAnalytics.task_time}</div>
-                <div className="analytics-label">DURATION</div>
-              </div>
-              <div className="analytics-item">
-                <div className="analytics-icon">�</div>
-                <div className="analytics-number">{((sessionAnalytics.current_step / 6) * 100).toFixed(0)}%</div>
-                <div className="analytics-label">COMPLETION</div>
-              </div>
-              <div className="analytics-item">
-                <div className="analytics-icon">💨</div>
-                <div className="analytics-number">{sessionAnalytics.steps > 0 ? (sessionAnalytics.steps / Math.max(1, parseFloat(sessionAnalytics.task_time.replace('s', '')))).toFixed(1) : '0.0'}</div>
-                <div className="analytics-label">STEPS/SEC</div>
+            
+            {/* First Row - Performance Comparison */}
+            <div className="performance-comparison-row">
+              <div className="comparison-card">
+                <div className="card-header">
+                  <div className="card-icon">👥</div>
+                  <div className="card-title">Steps</div>
+                </div>
+                <div className="card-comparison">
+                  <div className="actual-value">{sessionAnalytics.steps}</div>
+                  <div className="separator">|</div>
+                  <div className="base-value">7</div>
+                </div>
+                <div className="card-labels">
+                  <span className="actual-label">Total steps</span>
+                  <span className="base-label">Base steps</span>
+                </div>
               </div>
 
+              <div className="comparison-card">
+                <div className="card-header">
+                  <div className="card-icon">🕐</div>
+                  <div className="card-title">Time</div>
+                </div>
+                <div className="card-comparison">
+                  <div className="actual-value">{parseFloat(sessionAnalytics.task_time.replace('s', '')).toFixed(0)}s</div>
+                  <div className="separator">|</div>
+                  <div className="base-value">90s</div>
+                </div>
+                <div className="card-labels">
+                  <span className="actual-label">Total time</span>
+                  <span className="base-label">Base time</span>
+                </div>
+              </div>
 
+              <div className="comparison-card">
+                <div className="card-header">
+                  <div className="card-icon">🎯</div>
+                  <div className="card-title">Starting Point</div>
+                </div>
+                <div className="card-comparison">
+                  <div className="actual-value">{Math.min(sessionAnalytics.current_step, 7)}</div>
+                  <div className="separator">|</div>
+                  <div className="base-value">1</div>
+                </div>
+                <div className="card-labels">
+                  <span className="actual-label">Starting Form Field</span>
+                  <span className="base-label">Starting User Field</span>
+                </div>
+              </div>
+            </div>
 
+            {/* Second Row - Session Metrics */}
+            <div className="session-metrics-row">
+              <div className="session-metric-card">
+                <div className="metric-icon">↩️</div>
+                <div className="metric-content">
+                  <div className="metric-value">{sessionAnalytics.backtracks}</div>
+                  <div className="metric-label">Backtracks</div>
+                </div>
+              </div>
+              <div className="session-metric-card">
+                <div className="metric-icon">❌</div>
+                <div className="metric-content">
+                  <div className="metric-value">{sessionAnalytics.errors}</div>
+                  <div className="metric-label">Errors</div>
+                </div>
+              </div>
+              <div className="session-metric-card">
+                <div className="metric-icon">🖱️</div>
+                <div className="metric-content">
+                  <div className="metric-value">{sessionAnalytics.steps + sessionAnalytics.errors + sessionAnalytics.backtracks}</div>
+                  <div className="metric-label">Extra Clicks</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Step Flow Chart */}
+          {/* Minimalist Step Progress Flow */}
           <div className="visualization-tile">
             <div className="visualization-header">
-              <h3>� Step Progress Flow</h3>
+              <h3>🎯 Task Progress</h3>
             </div>
-            <div className="chart-container">
-              <div className="step-flow-chart">
-                {/* Progress Steps Visual */}
-                <div className="steps-visualization">
-                  {[1, 2, 3, 4, 5, 6].map((step) => (
-                    <div key={step} className="step-node-container">
-                      <div className={`step-node ${step <= sessionAnalytics.current_step ? 'completed' : step === sessionAnalytics.current_step + 1 ? 'current' : 'pending'}`}>
-                        {step <= sessionAnalytics.current_step ? '✓' : step}
+            <div className="minimalist-progress-container">
+              <div className="progress-track">
+                {[1, 2, 3, 4, 5, 6, 7].map((step) => {
+                  // If session is successfully completed (current_step >= 7), show all steps as completed
+                  // Step 7 is pressing the "Register" button to complete the form
+                  const isCompleted = sessionAnalytics.current_step >= 7 ? true : step <= sessionAnalytics.current_step;
+                  const isCurrent = sessionAnalytics.current_step < 7 && step === sessionAnalytics.current_step + 1;
+                  
+                  return (
+                    <div key={step} className="progress-segment">
+                      <div className={`step-indicator ${
+                        isCompleted ? 'completed' : 
+                        isCurrent ? 'current' : 'pending'
+                      }`}>
+                        {isCompleted ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        ) : step === 7 ? '✓' : step}
                       </div>
-                      {step < 6 && <div className={`step-connector ${step < sessionAnalytics.current_step ? 'completed' : ''}`}></div>}
+                      {step < 7 && <div className={`connector ${isCompleted ? 'completed' : ''}`}></div>}
                     </div>
-                  ))}
-                </div>
-                
-                {/* Metrics Bar */}
-                <div className="flow-metrics">
-                  <div className="metric-bar">
-                    <div className="bar-section success" style={{width: `${(sessionAnalytics.steps / Math.max(sessionAnalytics.steps + sessionAnalytics.errors + sessionAnalytics.backtracks, 1)) * 100}%`}}></div>
-                    <div className="bar-section backtrack" style={{width: `${(sessionAnalytics.backtracks / Math.max(sessionAnalytics.steps + sessionAnalytics.errors + sessionAnalytics.backtracks, 1)) * 100}%`}}></div>
-                    <div className="bar-section error" style={{width: `${(sessionAnalytics.errors / Math.max(sessionAnalytics.steps + sessionAnalytics.errors + sessionAnalytics.backtracks, 1)) * 100}%`}}></div>
-                  </div>
-                  <div className="legend">
-                    <span className="legend-item"><span className="legend-color success"></span>Steps ({sessionAnalytics.steps})</span>
-                    <span className="legend-item"><span className="legend-color backtrack"></span>Backtracks ({sessionAnalytics.backtracks})</span>
-                    <span className="legend-item"><span className="legend-color error"></span>Errors ({sessionAnalytics.errors})</span>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            </div>
-          </div>
-
-          {/* Session Activity Breakdown */}
-          <div className="visualization-tile">
-            <div className="visualization-header">
-              <h3>📊 Session Activity Breakdown</h3>
-            </div>
-            <div className="chart-container">
-              <div className="activity-breakdown">
-                <div className="breakdown-chart">
-                  <svg viewBox="0 0 400 250" className="breakdown-svg">
-                    {/* Calculate max value for scaling */}
-                    {(() => {
-                      const maxValue = Math.max(sessionAnalytics.steps, sessionAnalytics.backtracks, sessionAnalytics.errors, 1);
-                      const scale = 180 / maxValue; // Scale to fit in 180px height
-                      
-                      return (
-                        <g>
-                          {/* Grid Lines */}
-                          {[0, Math.ceil(maxValue * 0.25), Math.ceil(maxValue * 0.5), Math.ceil(maxValue * 0.75), maxValue].map((value, index) => (
-                            <g key={value}>
-                              <line 
-                                x1="60" 
-                                y1={200 - (value * scale)} 
-                                x2="350" 
-                                y2={200 - (value * scale)} 
-                                stroke="#f1f5f9" 
-                                strokeWidth="1" 
-                              />
-                              <text 
-                                x="50" 
-                                y={205 - (value * scale)} 
-                                fontSize="10" 
-                                fill="#9ca3af" 
-                                textAnchor="end"
-                              >
-                                {Math.round(value)}
-                              </text>
-                            </g>
-                          ))}
-                          
-                          {/* Steps Bar */}
-                          <rect
-                            x="80" 
-                            y={200 - (sessionAnalytics.steps * scale)}
-                            width="60" 
-                            height={sessionAnalytics.steps * scale}
-                            fill="#10b981"
-                            rx="3"
-                          />
-                          <text x="110" y="220" fontSize="11" fill="#374151" textAnchor="middle" fontWeight="600">Steps</text>
-                          <text x="110" y={190 - (sessionAnalytics.steps * scale)} fontSize="12" fill="#1f2937" textAnchor="middle" fontWeight="700">
-                            {sessionAnalytics.steps}
-                          </text>
-                          
-                          {/* Backtracks Bar */}
-                          <rect
-                            x="170" 
-                            y={200 - (sessionAnalytics.backtracks * scale)}
-                            width="60" 
-                            height={sessionAnalytics.backtracks * scale || 2}
-                            fill="#f59e0b"
-                            rx="3"
-                          />
-                          <text x="200" y="220" fontSize="11" fill="#374151" textAnchor="middle" fontWeight="600">Backtracks</text>
-                          <text x="200" y={190 - (sessionAnalytics.backtracks * scale)} fontSize="12" fill="#1f2937" textAnchor="middle" fontWeight="700">
-                            {sessionAnalytics.backtracks}
-                          </text>
-                          
-                          {/* Errors Bar */}
-                          <rect
-                            x="260" 
-                            y={200 - (sessionAnalytics.errors * scale)}
-                            width="60" 
-                            height={sessionAnalytics.errors * scale || 2}
-                            fill="#ef4444"
-                            rx="3"
-                          />
-                          <text x="290" y="220" fontSize="11" fill="#374151" textAnchor="middle" fontWeight="600">Errors</text>
-                          <text x="290" y={190 - (sessionAnalytics.errors * scale)} fontSize="12" fill="#1f2937" textAnchor="middle" fontWeight="700">
-                            {sessionAnalytics.errors}
-                          </text>
-                          
-                          {/* Base Line */}
-                          <line x1="60" y1="200" x2="340" y2="200" stroke="#374151" strokeWidth="2" />
-                        </g>
-                      );
-                    })()}
-                  </svg>
+              
+              <div className="progress-stats">
+                <div className="stat-item">
+                  <span className="stat-number">{Math.min(sessionAnalytics.current_step, 7)}</span>
+                  <span className="stat-label">of 7 completed</span>
                 </div>
-                
-                {/* Summary Stats */}
-                <div className="activity-summary">
-                  <div className="summary-item">
-                    <span className="summary-stat">{sessionAnalytics.steps + sessionAnalytics.backtracks + sessionAnalytics.errors}</span>
-                    <span className="summary-label">Total Actions</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-stat">{sessionAnalytics.steps > 0 ? ((sessionAnalytics.steps / (sessionAnalytics.steps + sessionAnalytics.backtracks + sessionAnalytics.errors)) * 100).toFixed(1) : '0'}%</span>
-                    <span className="summary-label">Success Rate</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-stat">{parseFloat(sessionAnalytics.task_time.replace('s', '')).toFixed(1)}s</span>
-                    <span className="summary-label">Duration</span>
-                  </div>
+                <div className="stat-item">
+                  <span className="stat-number">{Math.min(((sessionAnalytics.current_step / 7) * 100), 100).toFixed(0)}%</span>
+                  <span className="stat-label">progress</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-number">{sessionAnalytics.task_time}</span>
+                  <span className="stat-label">elapsed</span>
                 </div>
               </div>
             </div>
@@ -596,23 +570,23 @@ const Dashboard: React.FC = () => {
                   <div className="overview-icon">📈</div>
                   <div className="overview-content">
                     <h3>Total Sessions</h3>
-                    <div className="overview-number">{dashboardSummary.total_sessions}</div>
-                    <div className="overview-subtitle">All time usage</div>
+                    <div className="overview-number">{getFilteredMetrics().total_sessions}</div>
+                    <div className="overview-subtitle">{selectedGroup === 'all' ? 'All time usage' : `${selectedGroup} sessions`}</div>
                   </div>
                 </div>
                 <div className="overview-card">
                   <div className="overview-icon">✅</div>
                   <div className="overview-content">
                     <h3>Success Rate</h3>
-                    <div className="overview-number">{dashboardSummary.success_rate.toFixed(1)}%</div>
-                    <div className="overview-subtitle">{dashboardSummary.successful_sessions} successful sessions</div>
+                    <div className="overview-number">{getFilteredMetrics().success_rate.toFixed(1)}%</div>
+                    <div className="overview-subtitle">{getFilteredMetrics().successful_sessions} successful sessions</div>
                   </div>
                 </div>
                 <div className="overview-card">
                   <div className="overview-icon">⚡</div>
                   <div className="overview-content">
                     <h3>Avg Time</h3>
-                    <div className="overview-number">{dashboardSummary.avg_time_spent.toFixed(1)}s</div>
+                    <div className="overview-number">{getFilteredMetrics().avg_time_spent.toFixed(1)}s</div>
                     <div className="overview-subtitle">Per session completion</div>
                   </div>
                 </div>
@@ -620,7 +594,7 @@ const Dashboard: React.FC = () => {
                   <div className="overview-icon">🎯</div>
                   <div className="overview-content">
                     <h3>Avg Steps</h3>
-                    <div className="overview-number">{dashboardSummary.avg_steps.toFixed(1)}</div>
+                    <div className="overview-number">{getFilteredMetrics().avg_steps.toFixed(1)}</div>
                     <div className="overview-subtitle">Steps per session</div>
                   </div>
                 </div>
@@ -633,31 +607,31 @@ const Dashboard: React.FC = () => {
               <div className="metrics-grid">
                 <MetricTile
                   title="Effectiveness"
-                  value={dashboardSummary.avg_effectiveness}
+                  value={getFilteredMetrics().avg_effectiveness}
                   icon="🎯"
                   color="effectiveness"
-                  description="Average completion success across all sessions"
+                  description={selectedGroup === 'all' ? "Average completion success across all sessions" : `Average completion success for ${selectedGroup} sessions`}
                 />
                 <MetricTile
                   title="Efficiency"
-                  value={dashboardSummary.avg_efficiency}
+                  value={getFilteredMetrics().avg_efficiency}
                   icon="⚡"
                   color="efficiency"
-                  description="Average time & effort optimization"
+                  description={selectedGroup === 'all' ? "Average time & effort optimization" : `Average time & effort for ${selectedGroup} sessions`}
                 />
                 <MetricTile
                   title="Satisfaction"
-                  value={dashboardSummary.avg_satisfaction}
+                  value={getFilteredMetrics().avg_satisfaction}
                   icon="😊"
                   color="satisfaction"
-                  description="User experience quality"
+                  description={selectedGroup === 'all' ? "User experience quality" : `User experience for ${selectedGroup} sessions`}
                 />
                 <MetricTile
                   title="Usability Index"
-                  value={dashboardSummary.avg_usability_index}
+                  value={getFilteredMetrics().avg_usability_index}
                   icon="📊"
                   color="usability-index"
-                  description="Overall usability score"
+                  description={selectedGroup === 'all' ? "Overall usability score" : `Usability score for ${selectedGroup} sessions`}
                 />
               </div>
             </div>
@@ -713,15 +687,15 @@ const Dashboard: React.FC = () => {
                 <h3>📋 System Statistics</h3>
                 <div className="summary-grid">
                   <div className="summary-item">
-                    <div className="summary-number">{dashboardSummary.avg_backtracks.toFixed(1)}</div>
+                    <div className="summary-number">{getFilteredMetrics().avg_backtracks.toFixed(1)}</div>
                     <div className="summary-label">AVG BACKTRACKS</div>
                   </div>
                   <div className="summary-item">
-                    <div className="summary-number">{dashboardSummary.avg_errors.toFixed(1)}</div>
+                    <div className="summary-number">{getFilteredMetrics().avg_errors.toFixed(1)}</div>
                     <div className="summary-label">AVG ERRORS</div>
                   </div>
                   <div className="summary-item rate">
-                    <div className="summary-number">{dashboardSummary.success_rate.toFixed(1)}%</div>
+                    <div className="summary-number">{getFilteredMetrics().success_rate.toFixed(1)}%</div>
                     <div className="summary-label">SUCCESS RATE</div>
                   </div>
                 </div>
@@ -734,8 +708,8 @@ const Dashboard: React.FC = () => {
                     <div className="performance-icon">🕐</div>
                     <div className="performance-details">
                       <span className="performance-value">
-                        {Math.floor(dashboardSummary.avg_time_spent / 60)}:
-                        {Math.floor(dashboardSummary.avg_time_spent % 60).toString().padStart(2, '0')}
+                        {Math.floor(getFilteredMetrics().avg_time_spent / 60)}:
+                        {Math.floor(getFilteredMetrics().avg_time_spent % 60).toString().padStart(2, '0')}
                       </span>
                       <span className="performance-label">Avg Task Time</span>
                     </div>
@@ -743,21 +717,21 @@ const Dashboard: React.FC = () => {
                   <div className="performance-item">
                     <div className="performance-icon">👥</div>
                     <div className="performance-details">
-                      <span className="performance-value">{dashboardSummary.avg_steps.toFixed(1)}</span>
+                      <span className="performance-value">{getFilteredMetrics().avg_steps.toFixed(1)}</span>
                       <span className="performance-label">Avg Steps</span>
                     </div>
                   </div>
                   <div className="performance-item">
                     <div className="performance-icon">❌</div>
                     <div className="performance-details">
-                      <span className="performance-value">{dashboardSummary.avg_errors.toFixed(1)}</span>
+                      <span className="performance-value">{getFilteredMetrics().avg_errors.toFixed(1)}</span>
                       <span className="performance-label">Avg Errors</span>
                     </div>
                   </div>
                   <div className="performance-item">
                     <div className="performance-icon">↩️</div>
                     <div className="performance-details">
-                      <span className="performance-value">{dashboardSummary.avg_backtracks.toFixed(1)}</span>
+                      <span className="performance-value">{getFilteredMetrics().avg_backtracks.toFixed(1)}</span>
                       <span className="performance-label">Avg Backtracks</span>
                     </div>
                   </div>
