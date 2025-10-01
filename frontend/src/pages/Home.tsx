@@ -34,17 +34,6 @@ const Home: React.FC = () => {
               </p>
             </div>
 
-            {/* Consent/Privacy Section */}
-            <div className="consent-section">
-              <h3 className="consent-title">Privacy & Consent</h3>
-              <ul className="consent-list">
-                <li>No personal information (PII) is collected during testing</li>
-                <li>We only track interaction patterns and form completion metrics</li>
-                <li>All data is anonymized and used solely for usability analysis</li>
-                <li>You can stop the test at any time</li>
-              </ul>
-            </div>
-
             {/* CTA Button */}
             <button 
               onClick={handleStartTest}

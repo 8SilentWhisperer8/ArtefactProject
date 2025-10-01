@@ -33,12 +33,12 @@ const Test: React.FC = () => {
 
   // Tracking metrics
   const [activityMetrics, setActivityMetrics] = useState<ActivityMetrics>({
-    currentStep: 0,
-    taskTime: '0:00',
-    steps: 0,
+    currentStep: 1,
+    taskTime: '0s',
+    steps: 1,
     backtracks: 0,
     errors: 0,
-    startingPoint: 'Not Started'
+    startingPoint: 'Fresh Start'
   });
 
   // Tracking state
@@ -68,9 +68,23 @@ const Test: React.FC = () => {
   const loadExistingSession = async (sessionId: string) => {
     try {
       const analytics = await apiService.getSessionAnalytics(sessionId);
+      // Convert MM:SS format to seconds
+      let taskTimeInSeconds = '0s';
+      try {
+        if (analytics.task_time && typeof analytics.task_time === 'string') {
+          const [minutes, seconds] = analytics.task_time.split(':').map(Number);
+          if (!isNaN(minutes) && !isNaN(seconds)) {
+            const totalSeconds = (minutes * 60) + seconds;
+            taskTimeInSeconds = `${totalSeconds}s`;
+          }
+        }
+      } catch (timeError) {
+        console.error('Error parsing task_time:', analytics.task_time, timeError);
+      }
+      
       setActivityMetrics({
         currentStep: analytics.current_step,
-        taskTime: analytics.task_time,
+        taskTime: taskTimeInSeconds,
         steps: analytics.steps,
         backtracks: analytics.backtracks,
         errors: analytics.errors,
@@ -115,11 +129,9 @@ const Test: React.FC = () => {
     if (referenceTime) {
       const now = new Date();
       const diff = Math.floor((now.getTime() - referenceTime.getTime()) / 1000);
-      const minutes = Math.floor(diff / 60);
-      const seconds = diff % 60;
       setActivityMetrics(prev => ({
         ...prev,
-        taskTime: `${minutes}:${seconds.toString().padStart(2, '0')}`
+        taskTime: `${diff}s`
       }));
     }
   };

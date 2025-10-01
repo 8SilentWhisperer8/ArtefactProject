@@ -289,7 +289,7 @@ const Dashboard: React.FC = () => {
                 <div className="performance-item">
                   <div className="performance-icon">🕐</div>
                   <div className="performance-details">
-                    <span className="performance-value">0:00</span>
+                    <span className="performance-value">0s</span>
                     <span className="performance-label">Avg Task Time</span>
                   </div>
                 </div>
@@ -418,7 +418,23 @@ const Dashboard: React.FC = () => {
                   <div className="card-title">Time</div>
                 </div>
                 <div className="card-comparison">
-                  <div className="actual-value">{parseFloat(sessionAnalytics.task_time.replace('s', '')).toFixed(0)}s</div>
+                  <div className="actual-value">{(() => {
+                    try {
+                      // Parse MM:SS format to total seconds
+                      if (!sessionAnalytics.task_time || typeof sessionAnalytics.task_time !== 'string') {
+                        return '0s';
+                      }
+                      const [minutes, seconds] = sessionAnalytics.task_time.split(':').map(Number);
+                      if (isNaN(minutes) || isNaN(seconds)) {
+                        return '0s';
+                      }
+                      const totalSeconds = (minutes * 60) + seconds;
+                      return `${totalSeconds}s`;
+                    } catch (error) {
+                      console.error('Error parsing task_time:', sessionAnalytics.task_time, error);
+                      return '0s';
+                    }
+                  })()}</div>
                   <div className="separator">|</div>
                   <div className="base-value">90s</div>
                 </div>
@@ -512,7 +528,22 @@ const Dashboard: React.FC = () => {
                   <span className="stat-label">progress</span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-number">{sessionAnalytics.task_time}</span>
+                  <span className="stat-number">{(() => {
+                    try {
+                      if (!sessionAnalytics.task_time || typeof sessionAnalytics.task_time !== 'string') {
+                        return '0s';
+                      }
+                      const [minutes, seconds] = sessionAnalytics.task_time.split(':').map(Number);
+                      if (isNaN(minutes) || isNaN(seconds)) {
+                        return '0s';
+                      }
+                      const totalSeconds = (minutes * 60) + seconds;
+                      return `${totalSeconds}s`;
+                    } catch (error) {
+                      console.error('Error parsing elapsed time:', sessionAnalytics.task_time, error);
+                      return '0s';
+                    }
+                  })()}</span>
                   <span className="stat-label">elapsed</span>
                 </div>
               </div>
@@ -708,8 +739,7 @@ const Dashboard: React.FC = () => {
                     <div className="performance-icon">🕐</div>
                     <div className="performance-details">
                       <span className="performance-value">
-                        {Math.floor(getFilteredMetrics().avg_time_spent / 60)}:
-                        {Math.floor(getFilteredMetrics().avg_time_spent % 60).toString().padStart(2, '0')}
+                        {getFilteredMetrics().avg_time_spent.toFixed(0)}s
                       </span>
                       <span className="performance-label">Avg Task Time</span>
                     </div>
