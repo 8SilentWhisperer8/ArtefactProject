@@ -47,6 +47,7 @@ export interface SessionAnalytics {
 export interface DashboardSummary {
   total_sessions: number;
   successful_sessions: number;
+  partial_sessions: number;
   failed_sessions: number;
   success_rate: number;
   avg_effectiveness: number;
@@ -102,8 +103,13 @@ export const apiService = {
     return response.data;
   },
 
-  getRecentSessions: async (): Promise<FormOutputData[]> => {
-    const response = await apiClient.get('/dashboard/recent/');
+  getRecentSessions: async (limit: string | number = 10): Promise<FormOutputData[]> => {
+    const response = await apiClient.get(`/dashboard/recent/?limit=${limit}`);
+    return response.data;
+  },
+
+  getAllSessions: async (): Promise<FormOutputData[]> => {
+    const response = await apiClient.get('/dashboard/recent/?limit=all');
     return response.data;
   },
 };

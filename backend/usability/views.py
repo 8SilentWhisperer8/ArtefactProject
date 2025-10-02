@@ -112,11 +112,24 @@ def complete_session(request, session_id):
     form_output.save()
     
     # Create UserGroup entry
-    outcome = 'success' if completion_status == 'success' else 'failure'
+    # Map FormOutput completion_status to UserGroup outcome
+    outcome_mapping = {
+        'success': 'success',
+        'partial': 'partial', 
+        'failure': 'failure'
+    }
+    outcome = outcome_mapping.get(completion_status, 'failure')
+    
     user_group_data = {
         'outcome': outcome,
         **request.data.get('user_group_data', {})
     }
+    
+    # Auto-populate fields based on FormOutput data for partial completion
+    if outcome == 'partial':
+        user_group_data.setdefault('partial_fields_completed', form_output.fields_completed)
+    elif outcome == 'failure':
+        user_group_data.setdefault('failure_steps_completed', form_output.steps_taken)
     
     UserGroup.objects.create(
         form_output=form_output,
@@ -169,6 +182,7 @@ def dashboard_summary(request):
         summary_data = {
             'total_sessions': 0,
             'successful_sessions': 0,
+            'partial_sessions': 0,
             'failed_sessions': 0,
             'success_rate': 0.0,
             'avg_effectiveness': 0.0,
@@ -184,6 +198,7 @@ def dashboard_summary(request):
     
     # Calculate summary statistics
     successful_sessions = all_sessions.filter(completion_status='success').count()
+    partial_sessions = all_sessions.filter(completion_status='partial').count()
     failed_sessions = all_sessions.filter(completion_status='failure').count()
     total_sessions = all_sessions.count()
     
@@ -201,6 +216,7 @@ def dashboard_summary(request):
     summary_data = {
         'total_sessions': total_sessions,
         'successful_sessions': successful_sessions,
+        'partial_sessions': partial_sessions,
         'failed_sessions': failed_sessions,
         'success_rate': round((successful_sessions / total_sessions) * 100, 1) if total_sessions > 0 else 0.0,
         'avg_effectiveness': round(aggregates['avg_effectiveness'] or 0.0, 1),
@@ -221,6 +237,36 @@ def recent_sessions(request):
     """
     Get list of recent sessions for dashboard
     """
-    recent_sessions = FormOutput.objects.all().order_by('-created_at')[:10]
-    serializer = FormOutputSerializer(recent_sessions, many=True)
+    # Check if we need all sessions for filtering
+    limit = request.GET.get('limit', '10')
+    if limit == 'all':
+        sessions = FormOutput.objects.all().order_by('-created_at')
+    else:
+        try:
+            limit_int = int(limit)
+            sessions = FormOutput.objects.all().order_by('-created_at')[:limit_int]
+        except ValueError:
+            sessions = FormOutput.objects.all().order_by('-created_at')[:10]
+    
+    serializer = FormOutputSerializer(sessions, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_formoutput_details(request, pk):
+    """
+    Get FormOutput details for admin interface
+    """
+    try:
+        form_output = FormOutput.objects.get(pk=pk)
+        data = {
+            'id': form_output.id,
+            'session_id': form_output.session_id,
+            'completion_status': form_output.completion_status,
+            'fields_completed': form_output.fields_completed,
+            'steps_taken': form_output.steps_taken,
+            'time_spent_sec': form_output.time_spent_sec,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    except FormOutput.DoesNotExist:
+        return Response({'error': 'FormOutput not found'}, status=status.HTTP_404_NOT_FOUND)

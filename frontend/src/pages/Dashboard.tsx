@@ -32,8 +32,10 @@ const Dashboard: React.FC = () => {
   const [sessionAnalytics, setSessionAnalytics] = useState<SessionAnalytics | null>(null);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [recentSessions, setRecentSessions] = useState<FormOutputData[]>([]);
+  const [allSessions, setAllSessions] = useState<FormOutputData[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [selectedCompletionStatus, setSelectedCompletionStatus] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,17 +70,19 @@ const Dashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [summary, sessions] = await Promise.all([
+      const [summary, sessions, allSessionsData] = await Promise.all([
         apiService.getDashboardSummary(),
-        apiService.getRecentSessions()
+        apiService.getRecentSessions(10), // Recent 10 for display
+        apiService.getAllSessions() // All sessions for filtering
       ]);
       
       console.log('Dashboard Summary:', summary);
       console.log('Recent Sessions:', sessions);
-      console.log('Sessions length:', sessions.length);
+      console.log('All Sessions:', allSessionsData.length);
       
       setDashboardSummary(summary);
       setRecentSessions(sessions);
+      setAllSessions(allSessionsData);
       setError(null);
     } catch (err) {
       setError('Failed to load dashboard data');
@@ -116,19 +120,41 @@ const Dashboard: React.FC = () => {
 
   const getFilteredSessions = () => {
     if (selectedGroup === 'all') {
-      return recentSessions;
+      return allSessions;
     }
-    return recentSessions.filter(session => session.completion_status === selectedGroup);
+    return allSessions.filter(session => session.completion_status === selectedGroup);
   };
 
   // Calculate filtered metrics based on selected group
   const getFilteredMetrics = () => {
+    // When showing 'all', use the complete dashboard summary data
+    if (selectedGroup === 'all' && dashboardSummary) {
+      return {
+        total_sessions: dashboardSummary.total_sessions,
+        successful_sessions: dashboardSummary.successful_sessions,
+        partial_sessions: dashboardSummary.partial_sessions,
+        failed_sessions: dashboardSummary.failed_sessions,
+        success_rate: dashboardSummary.success_rate,
+        avg_time_spent: dashboardSummary.avg_time_spent,
+        avg_steps: dashboardSummary.avg_steps,
+        avg_effectiveness: dashboardSummary.avg_effectiveness,
+        avg_efficiency: dashboardSummary.avg_efficiency,
+        avg_satisfaction: dashboardSummary.avg_satisfaction,
+        avg_usability_index: dashboardSummary.avg_usability_index,
+        avg_backtracks: dashboardSummary.avg_backtracks,
+        avg_errors: dashboardSummary.avg_errors
+      };
+    }
+
+    // For specific status filtering, use the filtered recent sessions
     const filteredSessions = getFilteredSessions();
     
     if (filteredSessions.length === 0) {
       return {
         total_sessions: 0,
         successful_sessions: 0,
+        partial_sessions: 0,
+        failed_sessions: 0,
         success_rate: 0,
         avg_time_spent: 0,
         avg_steps: 0,
@@ -142,10 +168,14 @@ const Dashboard: React.FC = () => {
     }
 
     const successfulSessions = filteredSessions.filter(s => s.completion_status === 'success').length;
+    const partialSessions = filteredSessions.filter(s => s.completion_status === 'partial').length;
+    const failedSessions = filteredSessions.filter(s => s.completion_status === 'failure').length;
     
     return {
       total_sessions: filteredSessions.length,
       successful_sessions: successfulSessions,
+      partial_sessions: partialSessions,
+      failed_sessions: failedSessions,
       success_rate: (successfulSessions / filteredSessions.length) * 100,
       avg_time_spent: filteredSessions.reduce((sum, s) => sum + s.time_spent_sec, 0) / filteredSessions.length,
       avg_steps: filteredSessions.reduce((sum, s) => sum + s.steps_taken, 0) / filteredSessions.length,
@@ -153,8 +183,8 @@ const Dashboard: React.FC = () => {
       avg_efficiency: filteredSessions.reduce((sum, s) => sum + s.efficiency, 0) / filteredSessions.length,
       avg_satisfaction: filteredSessions.reduce((sum, s) => sum + s.satisfaction, 0) / filteredSessions.length,
       avg_usability_index: filteredSessions.reduce((sum, s) => sum + s.usability_index, 0) / filteredSessions.length,
-      avg_backtracks: dashboardSummary?.avg_backtracks || 0, // Use fallback from dashboard summary
-      avg_errors: dashboardSummary?.avg_errors || 0 // Use fallback from dashboard summary
+      avg_backtracks: filteredSessions.reduce((sum, s) => sum + s.backtracks, 0) / filteredSessions.length,
+      avg_errors: filteredSessions.reduce((sum, s) => sum + s.error_counts, 0) / filteredSessions.length
     };
   };
 
@@ -337,11 +367,27 @@ const Dashboard: React.FC = () => {
                 className="session-dropdown"
               >
                 <option value="all">All Sessions</option>
-                {recentSessions.map((session) => (
-                  <option key={session.session_id} value={session.session_id}>
-                    Session {session.session_id}
-                  </option>
-                ))}
+                {recentSessions
+                  .filter(session => selectedCompletionStatus === 'all' || session.completion_status === selectedCompletionStatus)
+                  .map((session) => (
+                    <option key={session.session_id} value={session.session_id}>
+                      Session {session.session_id} ({session.completion_status})
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="selector-group">
+              <label htmlFor="status-filter">Filter by Status:</label>
+              <select
+                id="status-filter"
+                value={selectedCompletionStatus}
+                onChange={(e) => setSelectedCompletionStatus(e.target.value)}
+                className="session-dropdown"
+              >
+                <option value="all">All Status</option>
+                <option value="success">Success</option>
+                <option value="partial">Partial</option>
+                <option value="failure">Failure</option>
               </select>
             </div>
             <button 
@@ -550,6 +596,61 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Filtered Sessions List */}
+          <div className="recent-sessions-section">
+            <h2>🕒 {selectedCompletionStatus === 'all' ? 'All Sessions' : `${selectedCompletionStatus.charAt(0).toUpperCase() + selectedCompletionStatus.slice(1)} Sessions`}</h2>
+            <div className="sessions-list">
+              {recentSessions
+                .filter(session => selectedCompletionStatus === 'all' || session.completion_status === selectedCompletionStatus)
+                .length > 0 ? (
+                recentSessions
+                  .filter(session => selectedCompletionStatus === 'all' || session.completion_status === selectedCompletionStatus)
+                  .slice(0, 8)
+                  .map((session) => (
+                    <div key={session.session_id} className={`session-card ${session.session_id === currentSessionId ? 'current-session' : ''}`}>
+                      <div className="session-header">
+                        <span className="session-id">Session {session.session_id}</span>
+                        <span className={`session-status ${session.completion_status}`}>
+                          {session.completion_status === 'success' ? '✅' : 
+                           session.completion_status === 'partial' ? '🟡' : '❌'}
+                          {session.completion_status}
+                        </span>
+                      </div>
+                      <div className="session-metrics">
+                        <div className="session-metric">
+                          <span className="metric-label">Effectiveness:</span>
+                          <span className="metric-value">{session.effectiveness.toFixed(1)}%</span>
+                        </div>
+                        <div className="session-metric">
+                          <span className="metric-label">Efficiency:</span>
+                          <span className="metric-value">{session.efficiency.toFixed(1)}%</span>
+                        </div>
+                        <div className="session-metric">
+                          <span className="metric-label">Time:</span>
+                          <span className="metric-value">{session.time_spent_sec.toFixed(0)}s</span>
+                        </div>
+                        <div className="session-metric">
+                          <span className="metric-label">Steps:</span>
+                          <span className="metric-value">{session.steps_taken}</span>
+                        </div>
+                      </div>
+                      <button 
+                        className="view-session-btn"
+                        onClick={() => handleSessionChange(session.session_id)}
+                        disabled={session.session_id === currentSessionId}
+                      >
+                        {session.session_id === currentSessionId ? 'Current Session' : 'View Details'}
+                      </button>
+                    </div>
+                  ))
+              ) : (
+                <div className="no-sessions-message">
+                  <p>No {selectedCompletionStatus === 'all' ? '' : selectedCompletionStatus + ' '}sessions found.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
     );
@@ -613,6 +714,26 @@ const Dashboard: React.FC = () => {
                     <div className="overview-subtitle">{getFilteredMetrics().successful_sessions} successful sessions</div>
                   </div>
                 </div>
+                {selectedGroup === 'all' && (
+                  <>
+                    <div className="overview-card">
+                      <div className="overview-icon">🟡</div>
+                      <div className="overview-content">
+                        <h3>Partial</h3>
+                        <div className="overview-number">{getFilteredMetrics().partial_sessions}</div>
+                        <div className="overview-subtitle">Incomplete sessions</div>
+                      </div>
+                    </div>
+                    <div className="overview-card">
+                      <div className="overview-icon">❌</div>
+                      <div className="overview-content">
+                        <h3>Failed</h3>
+                        <div className="overview-number">{getFilteredMetrics().failed_sessions}</div>
+                        <div className="overview-subtitle">Failed sessions</div>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="overview-card">
                   <div className="overview-icon">⚡</div>
                   <div className="overview-content">
@@ -709,63 +830,6 @@ const Dashboard: React.FC = () => {
                     <p>No sessions available yet. Start a test to see data here!</p>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Quick Stats Summary */}
-            <div className="summary-sections">
-              <div className="session-summary">
-                <h3>📋 System Statistics</h3>
-                <div className="summary-grid">
-                  <div className="summary-item">
-                    <div className="summary-number">{getFilteredMetrics().avg_backtracks.toFixed(1)}</div>
-                    <div className="summary-label">AVG BACKTRACKS</div>
-                  </div>
-                  <div className="summary-item">
-                    <div className="summary-number">{getFilteredMetrics().avg_errors.toFixed(1)}</div>
-                    <div className="summary-label">AVG ERRORS</div>
-                  </div>
-                  <div className="summary-item rate">
-                    <div className="summary-number">{getFilteredMetrics().success_rate.toFixed(1)}%</div>
-                    <div className="summary-label">SUCCESS RATE</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="performance-metrics">
-                <h3>📈 Performance Metrics</h3>
-                <div className="performance-grid">
-                  <div className="performance-item">
-                    <div className="performance-icon">🕐</div>
-                    <div className="performance-details">
-                      <span className="performance-value">
-                        {getFilteredMetrics().avg_time_spent.toFixed(0)}s
-                      </span>
-                      <span className="performance-label">Avg Task Time</span>
-                    </div>
-                  </div>
-                  <div className="performance-item">
-                    <div className="performance-icon">👥</div>
-                    <div className="performance-details">
-                      <span className="performance-value">{getFilteredMetrics().avg_steps.toFixed(1)}</span>
-                      <span className="performance-label">Avg Steps</span>
-                    </div>
-                  </div>
-                  <div className="performance-item">
-                    <div className="performance-icon">❌</div>
-                    <div className="performance-details">
-                      <span className="performance-value">{getFilteredMetrics().avg_errors.toFixed(1)}</span>
-                      <span className="performance-label">Avg Errors</span>
-                    </div>
-                  </div>
-                  <div className="performance-item">
-                    <div className="performance-icon">↩️</div>
-                    <div className="performance-details">
-                      <span className="performance-value">{getFilteredMetrics().avg_backtracks.toFixed(1)}</span>
-                      <span className="performance-label">Avg Backtracks</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </>

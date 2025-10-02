@@ -12,7 +12,7 @@ class FormOutput(models.Model):
     
     # Interaction tracking
     time_spent_sec = models.FloatField(default=0.0)
-    steps_planned = models.IntegerField(default=6)  # Expected number of form fields
+    steps_planned = models.IntegerField(default=7)  # Total steps: 6 form fields + register button
     steps_taken = models.IntegerField(default=0)
     backtracks = models.IntegerField(default=0)
     error_counts = models.IntegerField(default=0)
@@ -32,35 +32,53 @@ class FormOutput(models.Model):
     ]
     completion_status = models.CharField(max_length=10, choices=COMPLETION_CHOICES, default='failure')
     fields_completed = models.IntegerField(default=0)
-    fields_required = models.IntegerField(default=6)
+    fields_required = models.IntegerField(default=6)  # 6 form fields (register button is not counted as field)
     
     def calculate_effectiveness(self):
-        """Calculate effectiveness based on completion status"""
+        """Calculate effectiveness: (steps completed successfully / total steps) x 100 - (errors/total inputs x 100)"""
+        # Steps completed successfully based on completion status
         if self.completion_status == 'success':
-            self.effectiveness = 100.0
-        elif self.completion_status == 'failure':
-            self.effectiveness = 0.0
-        else:  # partial
-            self.effectiveness = (self.fields_completed / self.fields_required) * 100
+            steps_completed_successfully = self.fields_required
+        elif self.completion_status == 'partial':
+            steps_completed_successfully = self.fields_completed
+        else:  # failure
+            steps_completed_successfully = 0
+        
+        # Simple effectiveness calculation
+        base_effectiveness = (steps_completed_successfully / self.fields_required) * 100
+        error_penalty = (self.error_counts / self.steps_taken) * 100 if self.steps_taken > 0 else 0
+        
+        self.effectiveness = base_effectiveness - error_penalty
         return self.effectiveness
     
     def calculate_efficiency(self):
-        """Calculate efficiency using the provided formula"""
-        tbase = 90.0  # baseline time in seconds
-        rte = tbase / max(self.time_spent_sec, 0.1)  # Avoid division by zero
-        overhead = (self.backtracks + self.extra_clicks + 
-                   max(0, self.steps_taken - self.steps_planned)) / max(1, self.steps_planned)
-        self.efficiency = max(0, 100 * (rte - overhead))
+        """Calculate efficiency: TimeM - ((Backtracks + extrasteps/total steps) x 100)"""
+        baseline_time = 90.0
+        total_steps = 7
+        penalty_coefficient = 0.5  # Reduce penalty impact to 50%
+        
+        # TimeM: automatically 100% if time_spent_sec is lower than baseline_time
+        if self.time_spent_sec <= 0:
+            time_m = 0
+        elif self.time_spent_sec <= baseline_time:
+            time_m = 100.0
+        else:
+            time_m = (baseline_time / self.time_spent_sec) * 100
+        
+        extra_steps = self.steps_taken - total_steps if self.steps_taken > total_steps else 0
+        penalty = ((self.backtracks + extra_steps) / total_steps) * 100 * penalty_coefficient
+        
+        self.efficiency = time_m - penalty
         return self.efficiency
     
     def calculate_satisfaction(self):
-        """Calculate satisfaction based on completion status and steps"""
+        """Calculate satisfaction based on completion status"""
         if self.completion_status == 'success':
             self.satisfaction = 68.0
-        elif self.completion_status == 'failure':
-            self.satisfaction = 0.0 if self.steps_taken == 0 else 0.0
-        else:  # partial
-            self.satisfaction = min(45.0, (self.steps_taken / self.steps_planned) * 45)
+        elif self.completion_status == 'partial':
+            self.satisfaction = 34.0
+        else:  # failure
+            self.satisfaction = 0.0
         return self.satisfaction
     
     def calculate_usability_index(self):
@@ -94,6 +112,7 @@ class UserGroup(models.Model):
     # Outcome tracking
     OUTCOME_CHOICES = [
         ('success', 'Success'),
+        ('partial', 'Partial'),
         ('failure', 'Failure'),
     ]
     outcome = models.CharField(max_length=10, choices=OUTCOME_CHOICES)
@@ -103,6 +122,16 @@ class UserGroup(models.Model):
                                        help_text="What area of the form worked best for successful users")
     success_notes = models.TextField(blank=True, null=True,
                                    help_text="Additional notes about successful completion")
+    
+    # Partial completion-specific fields
+    partial_fields_completed = models.IntegerField(default=0,
+                                                 help_text="Number of fields completed in partial submission")
+    partial_last_field = models.CharField(max_length=100, blank=True, null=True,
+                                        help_text="Last field completed before stopping")
+    partial_abandon_reason = models.TextField(blank=True, null=True,
+                                            help_text="Reason for partial completion")
+    partial_notes = models.TextField(blank=True, null=True,
+                                   help_text="Additional notes about partial completion")
     
     # Failure-specific fields
     failure_steps_completed = models.IntegerField(default=0, 
@@ -116,5 +145,19 @@ class UserGroup(models.Model):
     
     created_at = models.DateTimeField(default=timezone.now)
     
+    def auto_populate_fields(self):
+        """Auto-populate fields based on the linked FormOutput data"""
+        if self.form_output:
+            if self.outcome == 'partial':
+                self.partial_fields_completed = self.form_output.fields_completed
+            elif self.outcome == 'failure':
+                self.failure_steps_completed = self.form_output.steps_taken
+    
+    def save(self, *args, **kwargs):
+        # Auto-populate fields if they're not already set
+        if self.form_output and not self.pk:  # Only on creation
+            self.auto_populate_fields()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
-        return f"{self.outcome.title()} - Session {self.form_output.session_id}"
+        return f"{self.outcome.title()} - {self.form_output.session_id}"

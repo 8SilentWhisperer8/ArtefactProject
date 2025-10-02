@@ -15,4 +15,7 @@ urlpatterns = [
     # Dashboard endpoints
     path('dashboard/summary/', views.dashboard_summary, name='dashboard-summary'),
     path('dashboard/recent/', views.recent_sessions, name='recent-sessions'),
+    
+    # Admin API endpoints
+    path('admin/api/formoutput/<int:pk>/', views.get_formoutput_details, name='formoutput-details'),
 ]
