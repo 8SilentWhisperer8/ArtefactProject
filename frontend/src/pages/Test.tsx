@@ -10,7 +10,6 @@ interface ActivityMetrics {
   steps: number;
   backtracks: number;
   errors: number;
-  startingPoint: string;
 }
 
 const Test: React.FC = () => {
@@ -37,8 +36,7 @@ const Test: React.FC = () => {
     taskTime: '0s',
     steps: 1,
     backtracks: 0,
-    errors: 0,
-    startingPoint: 'Fresh Start'
+    errors: 0
   });
 
   // Tracking state
@@ -48,6 +46,8 @@ const Test: React.FC = () => {
   const [extraClicks, setExtraClicks] = useState(0);
   const [currentFocusedField, setCurrentFocusedField] = useState<string | null>(null);
   const [fieldsTouched, setFieldsTouched] = useState<Set<string>>(new Set());
+  const [showTimeWarning, setShowTimeWarning] = useState(false);
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
   
   const timeIntervalRef = useRef<number | null>(null);
   const startTimeRef = useRef<Date | null>(null);
@@ -87,8 +87,7 @@ const Test: React.FC = () => {
         taskTime: taskTimeInSeconds,
         steps: analytics.steps,
         backtracks: analytics.backtracks,
-        errors: analytics.errors,
-        startingPoint: 'Resumed Session'
+        errors: analytics.errors
       });
     } catch (error) {
       console.error('Failed to load session:', error);
@@ -129,6 +128,22 @@ const Test: React.FC = () => {
     if (referenceTime) {
       const now = new Date();
       const diff = Math.floor((now.getTime() - referenceTime.getTime()) / 1000);
+      
+      // Update seconds elapsed state
+      setSecondsElapsed(diff);
+      
+      // Show warning when approaching 150 seconds (30 seconds before limit)
+      if (diff >= 150 && !showTimeWarning) {
+        setShowTimeWarning(true);
+      }
+      
+      // Auto-redirect if time limit exceeded
+      if (diff > 180) {
+        alert('Time limit of 3 minutes exceeded. Session ended without saving.');
+        navigate('/dashboard');
+        return;
+      }
+      
       setActivityMetrics(prev => ({
         ...prev,
         taskTime: `${diff}s`
@@ -152,9 +167,7 @@ const Test: React.FC = () => {
     setActivityMetrics(prev => ({
       ...prev,
       steps: prev.steps + 1,
-      currentStep: Math.max(prev.currentStep, getFieldStep(fieldName)),
-      // Set starting point to the first field focused
-      startingPoint: prev.startingPoint === 'Not Started' ? fieldName : prev.startingPoint
+      currentStep: Math.max(prev.currentStep, getFieldStep(fieldName))
     }));
     
     // Check for backtracks
@@ -262,6 +275,13 @@ const Test: React.FC = () => {
     if (!sessionId || !startTime) return;
 
     const timeSpent = (new Date().getTime() - startTime.getTime()) / 1000;
+    
+    // Don't update metrics if session exceeds 180 seconds
+    if (timeSpent > 180) {
+      console.log('Session exceeded time limit, not updating metrics');
+      return;
+    }
+
     const fieldsCompleted = Object.values(formData).filter(value => value.trim() !== '').length;
     
     try {
@@ -347,10 +367,91 @@ const Test: React.FC = () => {
            (fieldsTouched.has(fieldName) && !isFieldValid(fieldName, formData[fieldName as keyof typeof formData]));
   };
 
+  const handleCancel = async () => {
+    if (!sessionId || !startTime) {
+      // If no session started yet, just redirect to start window
+      setShowStartModal(true);
+      return;
+    }
+
+    // Count completed fields
+    const fieldsCompleted = Object.values(formData).filter(value => value.trim() !== '').length;
+    
+    // Determine completion status based on fields completed
+    const completionStatus = fieldsCompleted === 0 ? 'failure' : 'partial';
+
+    try {
+      // Update final session metrics before completion
+      await updateSessionMetrics();
+      
+      // Complete session with appropriate status
+      await apiService.completeSession(sessionId, {
+        completion_status: completionStatus,
+        user_group_data: {
+          outcome: 'cancelled',
+          success_notes: `User cancelled after completing ${fieldsCompleted} field(s)`
+        }
+      });
+      
+      console.log(`Session cancelled with status: ${completionStatus}`);
+    } catch (error) {
+      console.error('Failed to save cancelled session:', error);
+    }
+
+    // Clear the session and show start modal
+    setSessionId(null);
+    setIsNewSession(true);
+    setShowStartModal(true);
+    
+    // Clear timer
+    if (timeIntervalRef.current) {
+      clearInterval(timeIntervalRef.current);
+      timeIntervalRef.current = null;
+    }
+    
+    // Reset all form data and metrics
+    setFormData({
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+    
+    setActivityMetrics({
+      currentStep: 1,
+      taskTime: '0s',
+      steps: 1,
+      backtracks: 0,
+      errors: 0
+    });
+    
+    // Reset tracking state
+    setStartTime(null);
+    setLastFocusedField(null);
+    setFieldVisitOrder([]);
+    setExtraClicks(0);
+    setCurrentFocusedField(null);
+    setFieldsTouched(new Set());
+    setShowTimeWarning(false);
+    setSecondsElapsed(0);
+    startTimeRef.current = null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!sessionId) return;
+    if (!sessionId || !startTime) return;
+
+    // Check if session exceeds 180 seconds (3 minutes)
+    const timeSpent = (new Date().getTime() - startTime.getTime()) / 1000;
+    if (timeSpent > 180) {
+      alert('Session has exceeded the maximum time limit of 3 minutes. The session will not be saved.');
+      // Navigate away without saving
+      navigate('/dashboard');
+      return;
+    }
 
     // Only proceed if all fields are completed and valid
     if (!isFormValid()) {
@@ -404,6 +505,12 @@ const Test: React.FC = () => {
     if (sessionId) {
       navigate(`/dashboard?session=${sessionId}`);
     }
+  };
+
+  const shouldShowSeeDetailsButton = (): boolean => {
+    // Only show the button if at least one field is completed
+    const fieldsCompleted = Object.values(formData).filter(value => value.trim() !== '').length;
+    return fieldsCompleted > 0;
   };
 
   // Update metrics periodically
@@ -577,7 +684,7 @@ const Test: React.FC = () => {
               </div>
 
               <div className="form-actions">
-                <button type="button" className="cancel-button">Cancel</button>
+                <button type="button" className="cancel-button" onClick={handleCancel}>Cancel</button>
                 <button 
                   type="submit" 
                   className={`register-button ${!isFormValid() ? 'disabled' : ''}`}
@@ -593,17 +700,28 @@ const Test: React.FC = () => {
           <div className="activity-monitor">
             <h3>Activity monitor</h3>
             
-
-            
-            <div className="current-step">
-              <span className="label">Starting point:</span>
-              <span className="value">{activityMetrics.startingPoint || 'Not started'}</span>
-            </div>
+            {/* Time Warning Display */}
+            {secondsElapsed >= 150 && secondsElapsed < 180 && (
+              <div className="time-warning" style={{
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: '4px',
+                padding: '8px',
+                marginBottom: '10px',
+                color: '#856404',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}>
+                ⚠️ Warning: You have {180 - secondsElapsed} seconds remaining before the session times out!
+              </div>
+            )}
 
             <div className="metrics-grid">
               <div className="metric-item">
                 <span className="metric-label">Task timer:</span>
-                <span className="metric-value">{activityMetrics.taskTime}</span>
+                <span className="metric-value" style={{
+                  color: secondsElapsed >= 150 ? (secondsElapsed >= 180 ? '#dc3545' : '#fd7e14') : 'inherit'
+                }}>{activityMetrics.taskTime}</span>
               </div>
               <div className="metric-item">
                 <span className="metric-label">Steps:</span>
@@ -623,9 +741,11 @@ const Test: React.FC = () => {
               </div>
             </div>
 
-            <button onClick={seeDetails} className="see-details-button">
-              See details
-            </button>
+            {shouldShowSeeDetailsButton() && (
+              <button onClick={seeDetails} className="see-details-button">
+                See details
+              </button>
+            )}
 
 
           </div>

@@ -434,13 +434,41 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Session Performance Comparison Cards */}
+          {/* Session Performance Analysis */}
           <div className="session-analytics-tile">
             <div className="analytics-header">
               <h3>📊 Performance Analysis</h3>
             </div>
             
-            {/* First Row - Performance Comparison */}
+            {/* First Row - Progress Scale */}
+            <div className="minimalist-progress-container">
+              <div className="progress-track">
+                {[1, 2, 3, 4, 5, 6, 7].map((step) => {
+                  // If session is successfully completed (current_step >= 7), show all steps as completed
+                  // Step 7 is pressing the "Register" button to complete the form
+                  const isCompleted = sessionAnalytics.current_step >= 7 ? true : step <= sessionAnalytics.current_step;
+                  const isCurrent = sessionAnalytics.current_step < 7 && step === sessionAnalytics.current_step + 1;
+                  
+                  return (
+                    <div key={step} className="progress-segment">
+                      <div className={`step-indicator ${
+                        isCompleted ? 'completed' : 
+                        isCurrent ? 'current' : 'pending'
+                      }`}>
+                        {isCompleted ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        ) : step === 7 ? '✓' : step}
+                      </div>
+                      {step < 7 && <div className={`connector ${isCompleted ? 'completed' : ''}`}></div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Second Row - Steps, Time, Progress */}
             <div className="performance-comparison-row">
               <div className="comparison-card">
                 <div className="card-header">
@@ -492,22 +520,22 @@ const Dashboard: React.FC = () => {
 
               <div className="comparison-card">
                 <div className="card-header">
-                  <div className="card-icon">🎯</div>
-                  <div className="card-title">Starting Point</div>
+                  <div className="card-icon">📊</div>
+                  <div className="card-title">Progress</div>
                 </div>
                 <div className="card-comparison">
                   <div className="actual-value">{Math.min(sessionAnalytics.current_step, 7)}</div>
                   <div className="separator">|</div>
-                  <div className="base-value">1</div>
+                  <div className="base-value">{Math.min(((sessionAnalytics.current_step / 7) * 100), 100).toFixed(0)}%</div>
                 </div>
                 <div className="card-labels">
-                  <span className="actual-label">Starting Form Field</span>
-                  <span className="base-label">Starting User Field</span>
+                  <span className="actual-label">Steps done</span>
+                  <span className="base-label">Completion</span>
                 </div>
               </div>
             </div>
 
-            {/* Second Row - Session Metrics */}
+            {/* Third Row - Backtracks, Errors, Extra Clicks */}
             <div className="session-metrics-row">
               <div className="session-metric-card">
                 <div className="metric-icon">↩️</div>
@@ -530,124 +558,6 @@ const Dashboard: React.FC = () => {
                   <div className="metric-label">Extra Clicks</div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Minimalist Step Progress Flow */}
-          <div className="visualization-tile">
-            <div className="visualization-header">
-              <h3>🎯 Task Progress</h3>
-            </div>
-            <div className="minimalist-progress-container">
-              <div className="progress-track">
-                {[1, 2, 3, 4, 5, 6, 7].map((step) => {
-                  // If session is successfully completed (current_step >= 7), show all steps as completed
-                  // Step 7 is pressing the "Register" button to complete the form
-                  const isCompleted = sessionAnalytics.current_step >= 7 ? true : step <= sessionAnalytics.current_step;
-                  const isCurrent = sessionAnalytics.current_step < 7 && step === sessionAnalytics.current_step + 1;
-                  
-                  return (
-                    <div key={step} className="progress-segment">
-                      <div className={`step-indicator ${
-                        isCompleted ? 'completed' : 
-                        isCurrent ? 'current' : 'pending'
-                      }`}>
-                        {isCompleted ? (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        ) : step === 7 ? '✓' : step}
-                      </div>
-                      {step < 7 && <div className={`connector ${isCompleted ? 'completed' : ''}`}></div>}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              <div className="progress-stats">
-                <div className="stat-item">
-                  <span className="stat-number">{Math.min(sessionAnalytics.current_step, 7)}</span>
-                  <span className="stat-label">of 7 completed</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">{Math.min(((sessionAnalytics.current_step / 7) * 100), 100).toFixed(0)}%</span>
-                  <span className="stat-label">progress</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">{(() => {
-                    try {
-                      if (!sessionAnalytics.task_time || typeof sessionAnalytics.task_time !== 'string') {
-                        return '0s';
-                      }
-                      const [minutes, seconds] = sessionAnalytics.task_time.split(':').map(Number);
-                      if (isNaN(minutes) || isNaN(seconds)) {
-                        return '0s';
-                      }
-                      const totalSeconds = (minutes * 60) + seconds;
-                      return `${totalSeconds}s`;
-                    } catch (error) {
-                      console.error('Error parsing elapsed time:', sessionAnalytics.task_time, error);
-                      return '0s';
-                    }
-                  })()}</span>
-                  <span className="stat-label">elapsed</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filtered Sessions List */}
-          <div className="recent-sessions-section">
-            <h2>🕒 {selectedCompletionStatus === 'all' ? 'All Sessions' : `${selectedCompletionStatus.charAt(0).toUpperCase() + selectedCompletionStatus.slice(1)} Sessions`}</h2>
-            <div className="sessions-list">
-              {recentSessions
-                .filter(session => selectedCompletionStatus === 'all' || session.completion_status === selectedCompletionStatus)
-                .length > 0 ? (
-                recentSessions
-                  .filter(session => selectedCompletionStatus === 'all' || session.completion_status === selectedCompletionStatus)
-                  .slice(0, 8)
-                  .map((session) => (
-                    <div key={session.session_id} className={`session-card ${session.session_id === currentSessionId ? 'current-session' : ''}`}>
-                      <div className="session-header">
-                        <span className="session-id">Session {session.session_id}</span>
-                        <span className={`session-status ${session.completion_status}`}>
-                          {session.completion_status === 'success' ? '✅' : 
-                           session.completion_status === 'partial' ? '🟡' : '❌'}
-                          {session.completion_status}
-                        </span>
-                      </div>
-                      <div className="session-metrics">
-                        <div className="session-metric">
-                          <span className="metric-label">Effectiveness:</span>
-                          <span className="metric-value">{session.effectiveness.toFixed(1)}%</span>
-                        </div>
-                        <div className="session-metric">
-                          <span className="metric-label">Efficiency:</span>
-                          <span className="metric-value">{session.efficiency.toFixed(1)}%</span>
-                        </div>
-                        <div className="session-metric">
-                          <span className="metric-label">Time:</span>
-                          <span className="metric-value">{session.time_spent_sec.toFixed(0)}s</span>
-                        </div>
-                        <div className="session-metric">
-                          <span className="metric-label">Steps:</span>
-                          <span className="metric-value">{session.steps_taken}</span>
-                        </div>
-                      </div>
-                      <button 
-                        className="view-session-btn"
-                        onClick={() => handleSessionChange(session.session_id)}
-                        disabled={session.session_id === currentSessionId}
-                      >
-                        {session.session_id === currentSessionId ? 'Current Session' : 'View Details'}
-                      </button>
-                    </div>
-                  ))
-              ) : (
-                <div className="no-sessions-message">
-                  <p>No {selectedCompletionStatus === 'all' ? '' : selectedCompletionStatus + ' '}sessions found.</p>
-                </div>
-              )}
             </div>
           </div>
 
@@ -697,7 +607,8 @@ const Dashboard: React.FC = () => {
           <>
             {/* System Overview Stats */}
             <div className="overview-stats">
-              <div className="overview-grid">
+              {/* First Row: Total Sessions, Average Time, Average Steps */}
+              <div className="overview-grid" style={{ marginBottom: '1.5rem' }}>
                 <div className="overview-card">
                   <div className="overview-icon">📈</div>
                   <div className="overview-content">
@@ -706,34 +617,6 @@ const Dashboard: React.FC = () => {
                     <div className="overview-subtitle">{selectedGroup === 'all' ? 'All time usage' : `${selectedGroup} sessions`}</div>
                   </div>
                 </div>
-                <div className="overview-card">
-                  <div className="overview-icon">✅</div>
-                  <div className="overview-content">
-                    <h3>Success Rate</h3>
-                    <div className="overview-number">{getFilteredMetrics().success_rate.toFixed(1)}%</div>
-                    <div className="overview-subtitle">{getFilteredMetrics().successful_sessions} successful sessions</div>
-                  </div>
-                </div>
-                {selectedGroup === 'all' && (
-                  <>
-                    <div className="overview-card">
-                      <div className="overview-icon">🟡</div>
-                      <div className="overview-content">
-                        <h3>Partial</h3>
-                        <div className="overview-number">{getFilteredMetrics().partial_sessions}</div>
-                        <div className="overview-subtitle">Incomplete sessions</div>
-                      </div>
-                    </div>
-                    <div className="overview-card">
-                      <div className="overview-icon">❌</div>
-                      <div className="overview-content">
-                        <h3>Failed</h3>
-                        <div className="overview-number">{getFilteredMetrics().failed_sessions}</div>
-                        <div className="overview-subtitle">Failed sessions</div>
-                      </div>
-                    </div>
-                  </>
-                )}
                 <div className="overview-card">
                   <div className="overview-icon">⚡</div>
                   <div className="overview-content">
@@ -748,6 +631,34 @@ const Dashboard: React.FC = () => {
                     <h3>Avg Steps</h3>
                     <div className="overview-number">{getFilteredMetrics().avg_steps.toFixed(1)}</div>
                     <div className="overview-subtitle">Steps per session</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Second Row: Success Sessions, Partial Sessions, Failure Sessions */}
+              <div className="overview-grid">
+                <div className="overview-card">
+                  <div className="overview-icon">✅</div>
+                  <div className="overview-content">
+                    <h3>Success Sessions</h3>
+                    <div className="overview-number">{getFilteredMetrics().successful_sessions}</div>
+                    <div className="overview-subtitle">{getFilteredMetrics().success_rate.toFixed(1)}% completion rate</div>
+                  </div>
+                </div>
+                <div className="overview-card">
+                  <div className="overview-icon">🟡</div>
+                  <div className="overview-content">
+                    <h3>Partial Sessions</h3>
+                    <div className="overview-number">{getFilteredMetrics().partial_sessions}</div>
+                    <div className="overview-subtitle">Incomplete sessions</div>
+                  </div>
+                </div>
+                <div className="overview-card">
+                  <div className="overview-icon">❌</div>
+                  <div className="overview-content">
+                    <h3>Failure Sessions</h3>
+                    <div className="overview-number">{getFilteredMetrics().failed_sessions}</div>
+                    <div className="overview-subtitle">Failed sessions</div>
                   </div>
                 </div>
               </div>

@@ -931,6 +931,14 @@
   border: 1px solid #e2e8f0;
 }
 
+/* Progress container inside Performance Analysis - no border */
+.session-analytics-tile .minimalist-progress-container {
+  padding: 1.5rem 0 2rem 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
 .progress-track {
   display: flex;
   justify-content: center;
@@ -1032,7 +1040,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .comparison-card {
