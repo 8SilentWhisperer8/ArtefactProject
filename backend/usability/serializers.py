@@ -13,7 +13,7 @@ class FormOutputSerializer(serializers.ModelSerializer):
             'time_spent_sec', 'steps_planned', 'steps_taken', 
             'backtracks', 'error_counts', 'extra_clicks',
             'effectiveness', 'efficiency', 'satisfaction', 'usability_index',
-            'completion_status', 'fields_completed', 'fields_required'
+            'completion_status', 'fields_completed', 'total_steps'
         ]
         read_only_fields = ['id', 'created_at', 'effectiveness', 'efficiency', 'satisfaction', 'usability_index']
 

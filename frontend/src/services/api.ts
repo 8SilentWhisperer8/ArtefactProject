@@ -28,7 +28,7 @@ export interface FormOutputData {
   usability_index: number;
   completion_status: 'success' | 'partial' | 'failure';
   fields_completed: number;
-  fields_required: number;
+  total_steps: number;
 }
 
 export interface SessionAnalytics {
@@ -38,6 +38,7 @@ export interface SessionAnalytics {
   steps: number;
   backtracks: number;
   errors: number;
+  extra_clicks: number;
   effectiveness: number;
   efficiency: number;
   satisfaction: number;

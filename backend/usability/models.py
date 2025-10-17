@@ -32,43 +32,59 @@ class FormOutput(models.Model):
     ]
     completion_status = models.CharField(max_length=10, choices=COMPLETION_CHOICES, default='failure')
     fields_completed = models.IntegerField(default=0)
-    fields_required = models.IntegerField(default=6)  # 6 form fields (register button is not counted as field)
+    total_steps = models.IntegerField(default=7)  # Unified naming: total steps including all form fields + register button
     
     def calculate_effectiveness(self):
-        """Calculate effectiveness: (steps completed successfully / total steps) x 100 - (errors/total inputs x 100)"""
+        """Calculate effectiveness: (steps completed successfully / total steps) x 100 - effectiveness_penalty"""
         # Steps completed successfully based on completion status
         if self.completion_status == 'success':
-            steps_completed_successfully = self.fields_required
+            steps_completed_successfully = self.total_steps
         elif self.completion_status == 'partial':
             steps_completed_successfully = self.fields_completed
         else:  # failure
             steps_completed_successfully = 0
         
-        # Simple effectiveness calculation
-        base_effectiveness = (steps_completed_successfully / self.fields_required) * 100
-        error_penalty = (self.error_counts / self.steps_taken) * 100 if self.steps_taken > 0 else 0
+        # Calculate base effectiveness and penalty with smooth degradation
+        import math
+        base_effectiveness = (steps_completed_successfully / self.total_steps) * 100
         
-        self.effectiveness = base_effectiveness - error_penalty
+        # Smooth effectiveness penalty calculation using logarithmic decay
+        if self.error_counts > 0:
+            effectiveness_penalty = 25 * (1 - math.exp(-self.error_counts / 3))
+        else:
+            effectiveness_penalty = 0
+        
+        self.effectiveness = max(0, base_effectiveness - effectiveness_penalty)
         return self.effectiveness
     
     def calculate_efficiency(self):
-        """Calculate efficiency: TimeM - ((Backtracks + extrasteps/total steps) x 100)"""
+        """Calculate efficiency: TimeM - efficiency_penalty (smooth degradation based on backtracks and extra steps)"""
         baseline_time = 90.0
-        total_steps = 7
-        penalty_coefficient = 0.5  # Reduce penalty impact to 50%
         
-        # TimeM: automatically 100% if time_spent_sec is lower than baseline_time
+        # TimeM: 100% only if time is within baseline AND all fields were completed (success status)
         if self.time_spent_sec <= 0:
             time_m = 0
-        elif self.time_spent_sec <= baseline_time:
+        elif self.time_spent_sec <= baseline_time and self.completion_status == 'success':
             time_m = 100.0
         else:
-            time_m = (baseline_time / self.time_spent_sec) * 100
+            time_m = (self.time_spent_sec / baseline_time) * 100
         
-        extra_steps = self.steps_taken - total_steps if self.steps_taken > total_steps else 0
-        penalty = ((self.backtracks + extra_steps) / total_steps) * 100 * penalty_coefficient
+        # Calculate extra steps beyond the optimal path
+        extra_steps = self.steps_taken - self.total_steps if self.steps_taken > self.total_steps else 0
         
-        self.efficiency = time_m - penalty
+        # Smooth efficiency penalty calculation
+        # Use logarithmic decay to create smooth degradation
+        import math
+        total_inefficiencies = self.backtracks + extra_steps
+        
+        if total_inefficiencies > 0:
+            # Smooth penalty that increases logarithmically
+            # Base penalty per inefficiency, with diminishing returns
+            efficiency_penalty = 25 * (1 - math.exp(-total_inefficiencies / 3))
+        else:
+            efficiency_penalty = 0
+        
+        self.efficiency = max(0, time_m - efficiency_penalty)  # Ensure efficiency doesn't go below 0
         return self.efficiency
     
     def calculate_satisfaction(self):

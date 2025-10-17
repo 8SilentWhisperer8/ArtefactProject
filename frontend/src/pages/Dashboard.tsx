@@ -476,13 +476,13 @@ const Dashboard: React.FC = () => {
                   <div className="card-title">Steps</div>
                 </div>
                 <div className="card-comparison">
-                  <div className="actual-value">{sessionAnalytics.steps}</div>
+                  <div className="actual-value">{sessionAnalytics.current_step}</div>
                   <div className="separator">|</div>
                   <div className="base-value">7</div>
                 </div>
                 <div className="card-labels">
-                  <span className="actual-label">Total steps</span>
-                  <span className="base-label">Base steps</span>
+                  <span className="actual-label">Form progress</span>
+                  <span className="base-label">Total steps</span>
                 </div>
               </div>
 
@@ -554,7 +554,7 @@ const Dashboard: React.FC = () => {
               <div className="session-metric-card">
                 <div className="metric-icon">🖱️</div>
                 <div className="metric-content">
-                  <div className="metric-value">{sessionAnalytics.steps + sessionAnalytics.errors + sessionAnalytics.backtracks}</div>
+                  <div className="metric-value">{sessionAnalytics.extra_clicks}</div>
                   <div className="metric-label">Extra Clicks</div>
                 </div>
               </div>
@@ -607,14 +607,14 @@ const Dashboard: React.FC = () => {
           <>
             {/* System Overview Stats */}
             <div className="overview-stats">
-              {/* First Row: Total Sessions, Average Time, Average Steps */}
-              <div className="overview-grid" style={{ marginBottom: '1.5rem' }}>
+              {/* Group-Specific Tiles: Total Sessions, Average Time, Average Steps */}
+              <div className="overview-grid" style={{ marginBottom: selectedGroup === 'all' ? '1.5rem' : '0' }}>
                 <div className="overview-card">
                   <div className="overview-icon">📈</div>
                   <div className="overview-content">
                     <h3>Total Sessions</h3>
                     <div className="overview-number">{getFilteredMetrics().total_sessions}</div>
-                    <div className="overview-subtitle">{selectedGroup === 'all' ? 'All time usage' : `${selectedGroup} sessions`}</div>
+                    <div className="overview-subtitle">{selectedGroup === 'all' ? 'All time usage' : `${selectedGroup.charAt(0).toUpperCase() + selectedGroup.slice(1)} sessions only`}</div>
                   </div>
                 </div>
                 <div className="overview-card">
@@ -622,7 +622,7 @@ const Dashboard: React.FC = () => {
                   <div className="overview-content">
                     <h3>Avg Time</h3>
                     <div className="overview-number">{getFilteredMetrics().avg_time_spent.toFixed(1)}s</div>
-                    <div className="overview-subtitle">Per session completion</div>
+                    <div className="overview-subtitle">{selectedGroup === 'all' ? 'Per session completion' : `For ${selectedGroup} sessions`}</div>
                   </div>
                 </div>
                 <div className="overview-card">
@@ -630,38 +630,40 @@ const Dashboard: React.FC = () => {
                   <div className="overview-content">
                     <h3>Avg Steps</h3>
                     <div className="overview-number">{getFilteredMetrics().avg_steps.toFixed(1)}</div>
-                    <div className="overview-subtitle">Steps per session</div>
+                    <div className="overview-subtitle">{selectedGroup === 'all' ? 'Steps per session' : `In ${selectedGroup} sessions`}</div>
                   </div>
                 </div>
               </div>
               
-              {/* Second Row: Success Sessions, Partial Sessions, Failure Sessions */}
-              <div className="overview-grid">
-                <div className="overview-card">
-                  <div className="overview-icon">✅</div>
-                  <div className="overview-content">
-                    <h3>Success Sessions</h3>
-                    <div className="overview-number">{getFilteredMetrics().successful_sessions}</div>
-                    <div className="overview-subtitle">{getFilteredMetrics().success_rate.toFixed(1)}% completion rate</div>
+              {/* Second Row: Success Sessions, Partial Sessions, Failure Sessions (Only show when 'all' is selected) */}
+              {selectedGroup === 'all' && (
+                <div className="overview-grid">
+                  <div className="overview-card">
+                    <div className="overview-icon">✅</div>
+                    <div className="overview-content">
+                      <h3>Success Sessions</h3>
+                      <div className="overview-number">{getFilteredMetrics().successful_sessions}</div>
+                      <div className="overview-subtitle">{getFilteredMetrics().success_rate.toFixed(1)}% completion rate</div>
+                    </div>
+                  </div>
+                  <div className="overview-card">
+                    <div className="overview-icon">🟡</div>
+                    <div className="overview-content">
+                      <h3>Partial Sessions</h3>
+                      <div className="overview-number">{getFilteredMetrics().partial_sessions}</div>
+                      <div className="overview-subtitle">Incomplete sessions</div>
+                    </div>
+                  </div>
+                  <div className="overview-card">
+                    <div className="overview-icon">❌</div>
+                    <div className="overview-content">
+                      <h3>Failure Sessions</h3>
+                      <div className="overview-number">{getFilteredMetrics().failed_sessions}</div>
+                      <div className="overview-subtitle">Failed sessions</div>
+                    </div>
                   </div>
                 </div>
-                <div className="overview-card">
-                  <div className="overview-icon">🟡</div>
-                  <div className="overview-content">
-                    <h3>Partial Sessions</h3>
-                    <div className="overview-number">{getFilteredMetrics().partial_sessions}</div>
-                    <div className="overview-subtitle">Incomplete sessions</div>
-                  </div>
-                </div>
-                <div className="overview-card">
-                  <div className="overview-icon">❌</div>
-                  <div className="overview-content">
-                    <h3>Failure Sessions</h3>
-                    <div className="overview-number">{getFilteredMetrics().failed_sessions}</div>
-                    <div className="overview-subtitle">Failed sessions</div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Overall Performance Averages */}

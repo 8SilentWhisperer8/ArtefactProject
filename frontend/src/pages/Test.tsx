@@ -388,7 +388,7 @@ const Test: React.FC = () => {
       await apiService.completeSession(sessionId, {
         completion_status: completionStatus,
         user_group_data: {
-          outcome: 'cancelled',
+          outcome: completionStatus,
           success_notes: `User cancelled after completing ${fieldsCompleted} field(s)`
         }
       });

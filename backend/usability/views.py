@@ -77,14 +77,23 @@ def update_session_metrics(request, session_id):
     if serializer.is_valid():
         serializer.save()
         
+        # Calculate current step based on form progress (1-7: 6 fields + register button)
+        if form_output.completion_status == 'success':
+            current_step = 7  # All fields + register button completed
+        elif form_output.completion_status == 'partial':
+            current_step = form_output.fields_completed
+        else:  # failure
+            current_step = form_output.fields_completed
+        
         # Return updated analytics
         analytics_data = {
             'session_id': session_id,
-            'current_step': form_output.steps_taken,
+            'current_step': current_step,
             'task_time': f"{int(form_output.time_spent_sec // 60)}:{int(form_output.time_spent_sec % 60):02d}",
             'steps': form_output.steps_taken,
             'backtracks': form_output.backtracks,
             'errors': form_output.error_counts,
+            'extra_clicks': form_output.extra_clicks,
             'effectiveness': round(form_output.effectiveness, 1),
             'efficiency': round(form_output.efficiency, 1),
             'satisfaction': round(form_output.satisfaction, 1),
@@ -153,13 +162,22 @@ def get_session_analytics(request, session_id):
     except FormOutput.DoesNotExist:
         return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
     
+    # Calculate current step based on form progress (1-7: 6 fields + register button)
+    if form_output.completion_status == 'success':
+        current_step = 7  # All fields + register button completed
+    elif form_output.completion_status == 'partial':
+        current_step = form_output.fields_completed
+    else:  # failure
+        current_step = form_output.fields_completed
+    
     analytics_data = {
         'session_id': session_id,
-        'current_step': form_output.steps_taken,
+        'current_step': current_step,
         'task_time': f"{int(form_output.time_spent_sec // 60)}:{int(form_output.time_spent_sec % 60):02d}",
         'steps': form_output.steps_taken,
         'backtracks': form_output.backtracks,
         'errors': form_output.error_counts,
+        'extra_clicks': form_output.extra_clicks,
         'effectiveness': round(form_output.effectiveness, 1),
         'efficiency': round(form_output.efficiency, 1),
         'satisfaction': round(form_output.satisfaction, 1),
