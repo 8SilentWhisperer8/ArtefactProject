@@ -1,7 +1,7 @@
 /* Home Page Styles */
 .home-page {
   min-height: calc(100vh - 80px); /* Subtract header height */
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: var(--bg-gradient);
   padding: 2rem 0;
   display: flex;
   align-items: center;
@@ -33,17 +33,17 @@
   font-size: 3rem;
   font-weight: 700;
   line-height: 1.1;
-  color: #1e293b;
+  color: var(--grey-600);
   margin: 0;
 }
 
 .title-highlight {
-  color: #2563eb;
+  color: var(--primary-blue);
 }
 
 .subtitle {
   font-size: 1.25rem;
-  color: #64748b;
+  color: var(--grey-500);
   line-height: 1.6;
   margin: 0;
 }
@@ -54,41 +54,41 @@
   padding: 1.5rem;
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid #2563eb;
+  border-left: 4px solid var(--primary-blue);
 }
 
 .purpose-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--dark-900);
   margin: 0 0 0.75rem 0;
 }
 
 .purpose-text {
-  color: #64748b;
+  color: var(--grey-500);
   line-height: 1.6;
   margin: 0;
 }
 
 /* Consent Section */
 .consent-section {
-  background: #f1f5f9;
+  background: var(--grey-50);
   padding: 1.5rem;
   border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--grey-200);
 }
 
 .consent-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--dark-900);
   margin: 0 0 1rem 0;
 }
 
 .consent-list {
   margin: 0;
   padding-left: 1.25rem;
-  color: #64748b;
+  color: var(--grey-500);
   line-height: 1.6;
 }
 
@@ -98,7 +98,7 @@
 
 /* CTA Button */
 .cta-button {
-  background: #2563eb;
+  background: var(--primary-blue);
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -107,14 +107,14 @@
   border-radius: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px var(--primary-blue-shadow);
   align-self: flex-start;
 }
 
 .cta-button:hover {
-  background: #1d4ed8;
+  background: var(--primary-blue-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 6px 16px var(--primary-blue-shadow-hover);
 }
 
 .cta-button:active {

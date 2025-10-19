@@ -1,7 +1,7 @@
 /* Header Styles */
 .header {
   background-color: #ffffff;
-  border-bottom: 1px solid #e1e5e9;
+  border-bottom: 1px solid var(--grey-200);
   padding: 1.375rem 0;
   position: sticky;
   top: 0;
@@ -40,7 +40,7 @@
 .logo-text {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #2563eb;
+  color: var(--primary-blue);
 }
 
 /* Navigation */
@@ -58,7 +58,7 @@
 }
 
 .nav-link {
-  color: #6b7280;
+  color: var(--grey-600);
   text-decoration: none;
   font-weight: 500;
   font-size: 1rem;
@@ -69,14 +69,14 @@
 }
 
 .nav-link:hover {
-  color: #2563eb;
-  background-color: #f3f4f6;
+  color: var(--primary-blue);
+  background-color: var(--grey-100);
 }
 
 .nav-link.active {
-  color: #2563eb;
+  color: var(--primary-blue);
   font-weight: 600;
-  background-color: #eff6ff;
+  background-color: var(--primary-blue-bg);
 }
 
 .nav-link.active::after {
@@ -87,7 +87,7 @@
   transform: translateX(-50%);
   width: 20px;
   height: 2px;
-  background-color: #2563eb;
+  background-color: var(--primary-blue);
   border-radius: 1px;
 }
 

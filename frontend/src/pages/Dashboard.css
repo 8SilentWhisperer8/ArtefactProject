@@ -1,16 +1,17 @@
 /* Dashboard Page Styles */
 .dashboard-page {
   min-height: calc(100vh - 80px);
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: var(--bg-gradient);
   padding: 2rem 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 }
 
 /* Session-Specific Page Styling */
 .dashboard-page.session-specific {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  background: var(--bg-gradient);
+  align-items: flex-start;
 }
 
 .dashboard-container {
@@ -38,7 +39,7 @@
 
 /* Back to General Button */
 .back-to-general-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--primary-blue);
   color: white;
   border: none;
   padding: 0.75rem 1.25rem;
@@ -52,21 +53,21 @@
   gap: 0.5rem;
   height: fit-content;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 8px var(--primary-blue-shadow);
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
 }
 
 .back-to-general-btn:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: var(--primary-blue-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px var(--primary-blue-shadow-hover);
 }
 
 .back-to-general-btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 6px var(--primary-blue-shadow);
 }
 
 .back-to-general-btn:before {
@@ -92,18 +93,18 @@
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s;
-  color: #64748b;
+  color: var(--grey-500);
 }
 
 .tab-button.active {
-  background: #2563eb;
+  background: var(--primary-blue);
   color: white;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 4px var(--primary-blue-shadow);
 }
 
 .tab-button:hover:not(.active) {
-  background: #f1f5f9;
-  color: #2563eb;
+  background: var(--grey-100);
+  color: var(--primary-blue);
 }
 
 /* Session Selector */
@@ -118,6 +119,7 @@
   border-radius: 0.75rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   flex-wrap: wrap;
+  min-height: 80px;
 }
 
 .selector-group {
@@ -134,7 +136,7 @@
 
 .session-selector label {
   font-weight: 500;
-  color: #374151;
+  color: var(--primary-blue);
 }
 
 .session-dropdown {
@@ -162,7 +164,7 @@
   width: 40px;
   height: 40px;
   border: 4px solid #e5e7eb;
-  border-top: 4px solid #2563eb;
+  border-top: 4px solid var(--primary-blue);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -216,7 +218,7 @@
 }
 
 .no-data-tile h3 {
-  color: #374151;
+  color: #2284d1;
   margin-bottom: 0.75rem;
 }
 
@@ -226,7 +228,7 @@
 }
 
 .start-test-button {
-  background: #2563eb;
+  background: var(--primary-blue);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -237,7 +239,7 @@
 }
 
 .start-test-button:hover {
-  background: #1d4ed8;
+  background: #1a6bb8;
   transform: translateY(-1px);
 }
 
@@ -400,6 +402,9 @@
   border-radius: 0.75rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
 }
 
 .session-card:hover {
@@ -460,6 +465,7 @@
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
+  flex-grow: 1;
 }
 
 .session-metric {
@@ -483,7 +489,7 @@
 }
 
 .view-session-btn {
-  background: #2563eb;
+  background: var(--primary-blue);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -496,7 +502,7 @@
 }
 
 .view-session-btn:hover {
-  background: #1d4ed8;
+  background: #1a6bb8;
 }
 
 .view-session-btn:disabled {
@@ -1251,7 +1257,7 @@
   margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #374151;
+  color: #2284d1;
   display: flex;
   align-items: center;
   gap: 0.5rem;

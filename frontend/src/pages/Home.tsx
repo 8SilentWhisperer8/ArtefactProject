@@ -29,7 +29,7 @@ const Home: React.FC = () => {
               <h2 className="purpose-title">Test Purpose</h2>
               <p className="purpose-text">
                 This usability test evaluates how effectively users can complete a registration form. 
-                We measure key metrics including task completion rates, efficiency, user satisfaction, 
+                The application measures key metrics including task completion rates, efficiency, user satisfaction, 
                 and overall usability to identify areas for improvement.
               </p>
             </div>

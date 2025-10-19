@@ -1,4 +1,4 @@
-# Vium - Usability Analytics Platform
+# TriVium - Usability Analytics Platform
 
 A 3-page web application for measuring registration form usability with real-time analytics and comprehensive metrics.
 

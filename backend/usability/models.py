@@ -64,7 +64,7 @@ class FormOutput(models.Model):
         # TimeM: 100% only if time is within baseline AND all fields were completed (success status)
         if self.time_spent_sec <= 0:
             time_m = 0
-        elif self.time_spent_sec <= baseline_time and self.completion_status == 'success':
+        elif self.time_spent_sec >= baseline_time:
             time_m = 100.0
         else:
             time_m = (self.time_spent_sec / baseline_time) * 100
@@ -73,18 +73,33 @@ class FormOutput(models.Model):
         extra_steps = self.steps_taken - self.total_steps if self.steps_taken > self.total_steps else 0
         
         # Smooth efficiency penalty calculation
-        # Use logarithmic decay to create smooth degradation
         import math
         total_inefficiencies = self.backtracks + extra_steps
         
         if total_inefficiencies > 0:
-            # Smooth penalty that increases logarithmically
             # Base penalty per inefficiency, with diminishing returns
             efficiency_penalty = 25 * (1 - math.exp(-total_inefficiencies / 3))
         else:
             efficiency_penalty = 0
         
-        self.efficiency = max(0, time_m - efficiency_penalty)  # Ensure efficiency doesn't go below 0
+        # Calculate base efficiency (same formula for all statuses)
+        base_efficiency = max(0, time_m - efficiency_penalty)
+        
+        # Apply status-specific completion penalties
+        if self.completion_status == 'success':
+            # No additional penalty for successful completion
+            self.efficiency = base_efficiency
+        elif self.completion_status == 'partial':
+            # Moderate penalty based on incomplete fields (prevents exceeding 100%)
+            incomplete_fields = 6 - self.fields_completed  # 6 form fields total
+            completion_penalty = (incomplete_fields / 6) * 30  # Up to 30% penalty
+            self.efficiency = max(0, min(100.0, base_efficiency - completion_penalty))
+        else:  # failure
+            # Heavy penalty based on incomplete fields (prevents exceeding 100%)
+            incomplete_fields = 6 - self.fields_completed
+            completion_penalty = (incomplete_fields / 6) * 40  # Up to 50% penalty
+            self.efficiency = max(0, min(100.0, base_efficiency - completion_penalty))
+        
         return self.efficiency
     
     def calculate_satisfaction(self):
