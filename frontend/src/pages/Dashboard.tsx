@@ -18,7 +18,7 @@ const MetricTile: React.FC<MetricTileProps> = ({ title, value, icon, color, desc
       <div className="metric-icon">{icon}</div>
       <div className="metric-title">{title}</div>
     </div>
-    <div className="metric-value">{value.toFixed(1)}{title !== 'Usability Index' ? '%' : ''}</div>
+    <div className="metric-value">{value.toFixed(2)}{title !== 'Usability Index' ? '%' : ''}</div>
     <div className="metric-description">{description}</div>
   </div>
 );
@@ -621,7 +621,7 @@ const Dashboard: React.FC = () => {
                   <div className="overview-icon">⚡</div>
                   <div className="overview-content">
                     <h3>Avg Time</h3>
-                    <div className="overview-number">{getFilteredMetrics().avg_time_spent.toFixed(1)}s</div>
+                    <div className="overview-number">{getFilteredMetrics().avg_time_spent.toFixed(2)}s</div>
                     <div className="overview-subtitle">{selectedGroup === 'all' ? 'Per session completion' : `For ${selectedGroup} sessions`}</div>
                   </div>
                 </div>
@@ -629,7 +629,7 @@ const Dashboard: React.FC = () => {
                   <div className="overview-icon">🎯</div>
                   <div className="overview-content">
                     <h3>Avg Steps</h3>
-                    <div className="overview-number">{getFilteredMetrics().avg_steps.toFixed(1)}</div>
+                    <div className="overview-number">{getFilteredMetrics().avg_steps.toFixed(2)}</div>
                     <div className="overview-subtitle">{selectedGroup === 'all' ? 'Steps per session' : `In ${selectedGroup} sessions`}</div>
                   </div>
                 </div>
@@ -643,7 +643,7 @@ const Dashboard: React.FC = () => {
                     <div className="overview-content">
                       <h3>Success Sessions</h3>
                       <div className="overview-number">{getFilteredMetrics().successful_sessions}</div>
-                      <div className="overview-subtitle">{getFilteredMetrics().success_rate.toFixed(1)}% completion rate</div>
+                      <div className="overview-subtitle">{getFilteredMetrics().success_rate.toFixed(2)}% completion rate</div>
                     </div>
                   </div>
                   <div className="overview-card">
@@ -719,11 +719,11 @@ const Dashboard: React.FC = () => {
                       <div className="session-metrics">
                         <div className="session-metric">
                           <span className="metric-label">Effectiveness:</span>
-                          <span className="metric-value">{session.effectiveness.toFixed(1)}%</span>
+                          <span className="metric-value">{session.effectiveness.toFixed(2)}%</span>
                         </div>
                         <div className="session-metric">
                           <span className="metric-label">Time:</span>
-                          <span className="metric-value">{session.time_spent_sec.toFixed(0)}s</span>
+                          <span className="metric-value">{session.time_spent_sec.toFixed(2)}s</span>
                         </div>
                         <div className="session-metric">
                           <span className="metric-label">Steps:</span>

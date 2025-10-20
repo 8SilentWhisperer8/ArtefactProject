@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 import './Test.css';
 
@@ -14,11 +14,9 @@ interface ActivityMetrics {
 
 const Test: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   const [showStartModal, setShowStartModal] = useState(true);
-  const [isNewSession, setIsNewSession] = useState(true);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -34,7 +32,7 @@ const Test: React.FC = () => {
   const [activityMetrics, setActivityMetrics] = useState<ActivityMetrics>({
     currentStep: 1,
     taskTime: '0s',
-    steps: 1,
+    steps: 0,
     backtracks: 0,
     errors: 0
   });
@@ -53,47 +51,6 @@ const Test: React.FC = () => {
   const startTimeRef = useRef<Date | null>(null);
   const lastClickTimeRef = useRef<{[key: string]: number[]}>({});
 
-  // Check if coming from existing session
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const existingSessionId = searchParams.get('session');
-    
-    if (existingSessionId) {
-      setSessionId(existingSessionId);
-      setIsNewSession(false);
-      loadExistingSession(existingSessionId);
-    }
-  }, [location]);
-
-  const loadExistingSession = async (sessionId: string) => {
-    try {
-      const analytics = await apiService.getSessionAnalytics(sessionId);
-      // Convert MM:SS format to seconds
-      let taskTimeInSeconds = '0s';
-      try {
-        if (analytics.task_time && typeof analytics.task_time === 'string') {
-          const [minutes, seconds] = analytics.task_time.split(':').map(Number);
-          if (!isNaN(minutes) && !isNaN(seconds)) {
-            const totalSeconds = (minutes * 60) + seconds;
-            taskTimeInSeconds = `${totalSeconds}s`;
-          }
-        }
-      } catch (timeError) {
-        console.error('Error parsing task_time:', analytics.task_time, timeError);
-      }
-      
-      setActivityMetrics({
-        currentStep: analytics.current_step,
-        taskTime: taskTimeInSeconds,
-        steps: analytics.steps,
-        backtracks: analytics.backtracks,
-        errors: analytics.errors
-      });
-    } catch (error) {
-      console.error('Failed to load session:', error);
-    }
-  };
-
   const startNewTest = async () => {
     try {
       const response = await apiService.createSession();
@@ -110,17 +67,6 @@ const Test: React.FC = () => {
     } catch (error) {
       console.error('Failed to create session:', error);
     }
-  };
-
-  const startExistingTest = () => {
-    setShowStartModal(false);
-    const now = new Date();
-    setStartTime(now);
-    startTimeRef.current = now;
-    
-    // Start timer immediately and then every second
-    updateTimer();
-    timeIntervalRef.current = setInterval(updateTimer, 1000);
   };
 
   const updateTimer = () => {
@@ -400,7 +346,6 @@ const Test: React.FC = () => {
 
     // Clear the session and show start modal
     setSessionId(null);
-    setIsNewSession(true);
     setShowStartModal(true);
     
     // Clear timer
@@ -422,7 +367,7 @@ const Test: React.FC = () => {
     setActivityMetrics({
       currentStep: 1,
       taskTime: '0s',
-      steps: 1,
+      steps: 0,
       backtracks: 0,
       errors: 0
     });
@@ -539,31 +484,12 @@ const Test: React.FC = () => {
         <div className="test-container">
           <div className="start-content">
             <h2>Usability Test</h2>
-            {isNewSession ? (
-              <>
-                <p>Welcome to the usability test. You will be asked to complete a registration form while we track interaction patterns.</p>
-                <div className="modal-buttons">
-                  <button onClick={startNewTest} className="start-button">
-                    Start the test
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p>Continue with your existing session or start a new test.</p>
-                <div className="modal-buttons">
-                  <button onClick={startExistingTest} className="start-button">
-                    Continue Session
-                  </button>
-                  <button onClick={startNewTest} className="secondary-button">
-                    Start New Test
-                  </button>
-                  <button onClick={seeDetails} className="details-button">
-                    See Details
-                  </button>
-                </div>
-              </>
-            )}
+            <p>Welcome to the usability test. You will be asked to complete a registration form while we track interaction patterns.</p>
+            <div className="modal-buttons">
+              <button onClick={startNewTest} className="start-button">
+                Start the test
+              </button>
+            </div>
           </div>
         </div>
       </div>

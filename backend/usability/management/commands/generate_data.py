@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import models
 from usability.models import FormOutput, UserGroup
 import random
 import uuid
@@ -6,7 +7,7 @@ from datetime import datetime, timedelta
 
 
 class Command(BaseCommand):
-    help = 'Generate 50 random test sessions in the database'
+    help = 'Generate random test sessions with corresponding UserGroup entries in the database'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -19,9 +20,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         count = options['count']
         
-        self.stdout.write(f'\nGenerating {count} random test sessions...\n')
+        self.stdout.write(f'\nGenerating {count} random test sessions with UserGroup entries...\n')
         
         created_sessions = []
+        created_usergroups = []
         
         for i in range(count):
             # Random completion status with realistic distribution
@@ -84,14 +86,16 @@ class Command(BaseCommand):
             user_group.save()
             
             created_sessions.append(session)
+            created_usergroups.append(user_group)
             
             # Progress indicator
             if (i + 1) % 10 == 0:
-                self.stdout.write(f'  Created {i + 1}/{count} sessions...')
+                self.stdout.write(f'  Created {i + 1}/{count} sessions with UserGroups...')
         
         # Summary
         self.stdout.write('\n' + '='*60)
         self.stdout.write(self.style.SUCCESS(f'✅ Successfully created {count} test sessions!'))
+        self.stdout.write(self.style.SUCCESS(f'✅ Successfully created {count} UserGroup entries!'))
         self.stdout.write('='*60)
         
         # Statistics
@@ -100,7 +104,8 @@ class Command(BaseCommand):
         failure_count = FormOutput.objects.filter(completion_status='failure').count()
         
         self.stdout.write('\nDatabase Statistics:')
-        self.stdout.write(f'  Total sessions: {FormOutput.objects.count()}')
+        self.stdout.write(f'  Total FormOutput sessions: {FormOutput.objects.count()}')
+        self.stdout.write(f'  Total UserGroup entries: {UserGroup.objects.count()}')
         self.stdout.write(f'  Success: {success_count} ({success_count/FormOutput.objects.count()*100:.1f}%)')
         self.stdout.write(f'  Partial: {partial_count} ({partial_count/FormOutput.objects.count()*100:.1f}%)')
         self.stdout.write(f'  Failure: {failure_count} ({failure_count/FormOutput.objects.count()*100:.1f}%)')
@@ -109,6 +114,3 @@ class Command(BaseCommand):
         self.stdout.write(f'  Average time: {avg_time:.1f}s')
         
         self.stdout.write('\n💡 Tip: Run "python manage.py clear_data" to remove all test data')
-
-
-from django.db import models

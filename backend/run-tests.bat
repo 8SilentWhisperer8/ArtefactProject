@@ -1,23 +1,9 @@
 @echo off
-REM Beautiful Test Runner for ArtefactProject
-REM Runs Django tests with organized visual output
-
-setlocal enabledelayedexpansion
-
-REM Get test path from argument or use default
+REM Django test runner
 set TEST_PATH=%*
-if "%TEST_PATH%"=="" set TEST_PATH=tests.unit tests.system tests.performance
+if "%TEST_PATH%"=="" set TEST_PATH=tests
 
-echo.
-echo ===============================================================================
-echo                      ARTEFACT PROJECT TEST SUITE
-echo                         Visual Test Results
-echo ===============================================================================
-echo.
-
-echo ═══════════════════════════════════════════════════════════════════════════════
-echo Running: python manage.py test %TEST_PATH% -v 2
-echo ═══════════════════════════════════════════════════════════════════════════════
+python manage.py test %TEST_PATH%
 echo.
 
 REM Run the tests

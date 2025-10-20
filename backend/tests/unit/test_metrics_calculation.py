@@ -86,16 +86,18 @@ class MetricsCalculationTestCase(TestCase):
         """Test efficiency calculation for fast successful completion"""
         self.session_success.calculate_efficiency()
         
-        # Expected: TimeM=100% (45s <= 90s AND success), no penalties = 100%
-        expected_efficiency = 100.0
+        # New formula: TimeM = (time_spent / baseline_time) * 100 when time < baseline
+        # time_spent = 45s, baseline = 90s, so TimeM = (45/90)*100 = 50%
+        # Success status has 0 backtracks and steps_taken=7 (same as total_steps), so no penalties
+        # Expected: 50% (no penalty for success)
+        expected_efficiency = 50.0
         self.assertEqual(self.session_success.efficiency, expected_efficiency)
         
     def test_efficiency_calculation_with_penalties(self):
         """Test efficiency calculation with backtracks and extra steps"""
         self.session_partial.calculate_efficiency()
         
-        # For partial completion: TimeM = (time_spent / baseline_time) * 100
-        # Only success status with time <= baseline gets 100% TimeM
+        # New formula: TimeM = (time_spent / baseline_time) * 100
         baseline_time = 90.0
         time_m = (self.session_partial.time_spent_sec / baseline_time) * 100  # (60/90)*100 = 66.67%
         
@@ -103,7 +105,15 @@ class MetricsCalculationTestCase(TestCase):
         extra_steps = max(0, self.session_partial.steps_taken - 7)  # 10 - 7 = 3
         total_inefficiencies = self.session_partial.backtracks + extra_steps  # 2 + 3 = 5
         efficiency_penalty = 25 * (1 - math.exp(-total_inefficiencies/3))
-        expected_efficiency = max(0, time_m - efficiency_penalty)
+        base_efficiency = max(0, time_m - efficiency_penalty)
+        
+        # Partial status: scale base efficiency by completion ratio + small bonus - inefficiency penalty
+        # fields_completed=4, total_steps=7, so completion_ratio = 4/7 = 0.5714
+        completion_ratio = self.session_partial.fields_completed / self.session_partial.total_steps  # 4/7
+        scaled_efficiency = base_efficiency * completion_ratio
+        completion_bonus = 5 * completion_ratio
+        inefficiency_penalty = 15 * (1 - math.exp(-total_inefficiencies/3))
+        expected_efficiency = max(0, scaled_efficiency + completion_bonus - inefficiency_penalty)
         
         self.assertAlmostEqual(
             self.session_partial.efficiency, 

@@ -54,7 +54,7 @@ class FormOutput(models.Model):
         else:
             effectiveness_penalty = 0
         
-        self.effectiveness = max(0, base_effectiveness - effectiveness_penalty)
+        self.effectiveness = round(max(0, base_effectiveness - effectiveness_penalty), 2)
         return self.effectiveness
     
     def calculate_efficiency(self):
@@ -88,17 +88,53 @@ class FormOutput(models.Model):
         # Apply status-specific completion penalties
         if self.completion_status == 'success':
             # No additional penalty for successful completion
-            self.efficiency = base_efficiency
+            self.efficiency = round(base_efficiency, 2)
+        
         elif self.completion_status == 'partial':
-            # Moderate penalty based on incomplete fields (prevents exceeding 100%)
-            incomplete_fields = 6 - self.fields_completed  # 6 form fields total
-            completion_penalty = (incomplete_fields / 6) * 30  # Up to 30% penalty
-            self.efficiency = max(0, min(100.0, base_efficiency - completion_penalty))
+            # For partial: scale base efficiency by completion ratio, then add small bonus
+            completion_ratio = self.fields_completed / self.total_steps  # 7 form fields (including register button)
+
+            # Scale the base efficiency by how much was completed (more fields = higher efficiency)
+            scaled_efficiency = base_efficiency * completion_ratio
+            
+            # Add a small bonus for partial completion (up to 5 points to ensure non-zero)
+            completion_bonus = 5 * completion_ratio
+            
+            # Calculate inefficiency penalty from backtracks and extra steps
+            total_inefficiencies = self.backtracks + extra_steps
+            if total_inefficiencies > 0:
+                inefficiency_penalty = 15 * (1 - math.exp(-total_inefficiencies / 3))
+            else:
+                inefficiency_penalty = 0
+            
+            # Combine: scaled efficiency + bonus - inefficiency penalty
+            partial_efficiency = max(0, scaled_efficiency + completion_bonus - inefficiency_penalty)
+            self.efficiency = round(partial_efficiency, 2)
+        
         else:  # failure
-            # Heavy penalty based on incomplete fields (prevents exceeding 100%)
-            incomplete_fields = 6 - self.fields_completed
-            completion_penalty = (incomplete_fields / 6) * 40  # Up to 50% penalty
-            self.efficiency = max(0, min(100.0, base_efficiency - completion_penalty))
+            # For failure, only give minimal credit if fields were completed
+            if self.fields_completed > 0:
+                completion_ratio = self.fields_completed / self.total_steps  # 7 form fields (including register button)
+                
+                # Scale base efficiency by completion ratio with heavy discount (50% of scaled value)
+                scaled_efficiency = base_efficiency * completion_ratio * 0.5
+                
+                # Add minimal bonus
+                completion_bonus = 3 * completion_ratio
+                
+                # Heavy inefficiency penalty
+                total_inefficiencies = self.backtracks + extra_steps
+                if total_inefficiencies > 0:
+                    inefficiency_penalty = 20 * (1 - math.exp(-total_inefficiencies / 3))
+                else:
+                    inefficiency_penalty = 0
+                
+                # Combine: scaled efficiency + bonus - inefficiency penalty
+                failure_efficiency = max(0, scaled_efficiency + completion_bonus - inefficiency_penalty)
+                self.efficiency = round(failure_efficiency, 2)
+            else:
+                # No fields completed = 0 efficiency
+                self.efficiency = 0.0
         
         return self.efficiency
     
@@ -114,9 +150,9 @@ class FormOutput(models.Model):
     
     def calculate_usability_index(self):
         """Calculate overall usability index: UI = 0.40*E + 0.30*F + 0.30*S"""
-        self.usability_index = (0.40 * self.effectiveness + 
-                               0.30 * self.efficiency + 
-                               0.30 * self.satisfaction)
+        self.usability_index = round(0.40 * self.effectiveness + 
+                                     0.30 * self.efficiency + 
+                                     0.30 * self.satisfaction, 2)
         return self.usability_index
     
     def update_all_metrics(self):
