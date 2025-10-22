@@ -484,14 +484,52 @@ const Test: React.FC = () => {
         <div className="test-container">
           <div className="start-content" role="dialog" aria-labelledby="test-title" aria-describedby="test-description">
             <h2 id="test-title">Usability Test</h2>
-            <p id="test-description">Welcome to the usability test. You will be asked to complete a registration form while we track interaction patterns.</p>
+            <p id="test-description">Welcome to the usability test. You will be asked to complete a registration form while we track interaction patterns to improve user experience.</p>
+            
+            <div className="data-collection-notice">
+              <h3>📊 Data Collection Notice</h3>
+              <p><strong>What data the application collects:</strong></p>
+              <ul>
+                <li><strong>Interaction Metrics:</strong> Time spent, steps taken, field navigation patterns</li>
+                <li><strong>Form Interactions:</strong> Field focus/blur events, input validation errors</li>
+                <li><strong>Usability Indicators:</strong> Backtracking behavior, completion status</li>
+                <li><strong>Performance Data:</strong> Task completion time, click patterns</li>
+              </ul>
+              
+              <p><strong>What the application DO NOT collects:</strong></p>
+              <ul>
+                <li>No personal information (names, emails, passwords are not saved)</li>
+                <li>No form content or input values</li>
+                <li>No identifiable user data</li>
+              </ul>
+              
+              <div className="compliance-info">
+                <p><strong>Privacy & Compliance:</strong></p>
+                <ul>
+                  <li>Compliant with GDPR & data protection regulations</li>
+                  <li>Anonymous session tracking only</li>
+                  <li>Data used solely for usability analysis (ISO 9241-11)</li>
+                  <li>You can cancel at any time without saving data</li>
+                </ul>
+              </div>
+              
+              <p className="consent-text">By clicking "Start Test", you consent to anonymous interaction tracking for usability research purposes.</p>
+            </div>
+            
             <div className="modal-buttons">
               <button 
                 onClick={startNewTest} 
                 className="start-button"
-                aria-label="Start the usability test"
+                aria-label="Start the usability test and consent to anonymous data collection"
               >
-                Start the test
+                I Understand - Start Test
+              </button>
+              <button 
+                onClick={() => navigate('/')} 
+                className="cancel-button"
+                aria-label="Cancel and return to home page"
+              >
+                Cancel
               </button>
             </div>
           </div>
