@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 import type { FormOutputData, DashboardSummary, SessionAnalytics } from '../services/api';
-import './Dashboard.css';
+import '../styles/pages/Dashboard.css';
 
 interface MetricTileProps {
   title: string;

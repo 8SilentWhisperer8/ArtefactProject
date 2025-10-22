@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import './Home.css';
+import '../styles/pages/Home.css';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -25,8 +25,8 @@ const Home: React.FC = () => {
             </p>
             
             {/* Test Purpose Section */}
-            <div className="purpose-section">
-              <h2 className="purpose-title">Test Purpose</h2>
+            <div className="purpose-section" role="region" aria-labelledby="purpose-title">
+              <h2 className="purpose-title" id="purpose-title">Test Purpose</h2>
               <p className="purpose-text">
                 This usability test evaluates how effectively users can complete a registration form. 
                 The application measures key metrics including task completion rates, efficiency, user satisfaction, 
@@ -38,6 +38,7 @@ const Home: React.FC = () => {
             <button 
               onClick={handleStartTest}
               className="cta-button"
+              aria-label="Start the usability test now"
             >
               Try now
             </button>
@@ -47,7 +48,7 @@ const Home: React.FC = () => {
           <div className="image-content">
             <img 
               src="/src/assets/landpagescreen.png" 
-              alt="Usability Analytics Dashboard"
+              alt="Usability Analytics Dashboard showing metrics and performance charts"
               className="hero-image"
             />
           </div>

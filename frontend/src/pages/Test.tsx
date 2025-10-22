@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
-import './Test.css';
+import '../styles/pages/Test.css';
 
 interface ActivityMetrics {
   currentStep: number;
@@ -482,11 +482,15 @@ const Test: React.FC = () => {
     return (
       <div className="test-page">
         <div className="test-container">
-          <div className="start-content">
-            <h2>Usability Test</h2>
-            <p>Welcome to the usability test. You will be asked to complete a registration form while we track interaction patterns.</p>
+          <div className="start-content" role="dialog" aria-labelledby="test-title" aria-describedby="test-description">
+            <h2 id="test-title">Usability Test</h2>
+            <p id="test-description">Welcome to the usability test. You will be asked to complete a registration form while we track interaction patterns.</p>
             <div className="modal-buttons">
-              <button onClick={startNewTest} className="start-button">
+              <button 
+                onClick={startNewTest} 
+                className="start-button"
+                aria-label="Start the usability test"
+              >
                 Start the test
               </button>
             </div>
@@ -502,7 +506,12 @@ const Test: React.FC = () => {
         <div className="test-layout">
           {/* Registration Form */}
           <div className="form-section">
-            <form onSubmit={handleSubmit} className="registration-form">
+            <form 
+              onSubmit={handleSubmit} 
+              className="registration-form"
+              aria-label="Account registration form"
+              noValidate
+            >
               <h2>Create Your Account</h2>
               
               <div className="form-group">
@@ -516,9 +525,15 @@ const Test: React.FC = () => {
                   onBlur={() => handleFieldBlur('firstName')}
                   onClick={() => handleClick('firstName')}
                   className={shouldShowValidationMessage('firstName') && getFieldValidationMessage('firstName', formData.firstName) ? 'error' : ''}
+                  aria-label="First Name"
+                  aria-required="true"
+                  aria-invalid={shouldShowValidationMessage('firstName') && getFieldValidationMessage('firstName', formData.firstName) ? 'true' : 'false'}
+                  aria-describedby={shouldShowValidationMessage('firstName') && getFieldValidationMessage('firstName', formData.firstName) ? 'firstName-error' : undefined}
                 />
                 {shouldShowValidationMessage('firstName') && getFieldValidationMessage('firstName', formData.firstName) && (
-                  <span className="validation-warning">{getFieldValidationMessage('firstName', formData.firstName)}</span>
+                  <span className="validation-warning" id="firstName-error" role="alert" aria-live="polite">
+                    {getFieldValidationMessage('firstName', formData.firstName)}
+                  </span>
                 )}
               </div>
 
@@ -533,9 +548,15 @@ const Test: React.FC = () => {
                   onBlur={() => handleFieldBlur('lastName')}
                   onClick={() => handleClick('lastName')}
                   className={shouldShowValidationMessage('lastName') && getFieldValidationMessage('lastName', formData.lastName) ? 'error' : ''}
+                  aria-label="Last Name"
+                  aria-required="true"
+                  aria-invalid={shouldShowValidationMessage('lastName') && getFieldValidationMessage('lastName', formData.lastName) ? 'true' : 'false'}
+                  aria-describedby={shouldShowValidationMessage('lastName') && getFieldValidationMessage('lastName', formData.lastName) ? 'lastName-error' : undefined}
                 />
                 {shouldShowValidationMessage('lastName') && getFieldValidationMessage('lastName', formData.lastName) && (
-                  <span className="validation-warning">{getFieldValidationMessage('lastName', formData.lastName)}</span>
+                  <span className="validation-warning" id="lastName-error" role="alert" aria-live="polite">
+                    {getFieldValidationMessage('lastName', formData.lastName)}
+                  </span>
                 )}
               </div>
 
@@ -552,9 +573,15 @@ const Test: React.FC = () => {
                   onBlur={() => handleFieldBlur('dateOfBirth')}
                   onClick={() => handleClick('dateOfBirth')}
                   className={shouldShowValidationMessage('dateOfBirth') && getFieldValidationMessage('dateOfBirth', formData.dateOfBirth) ? 'error' : ''}
+                  aria-label="Date of Birth in format day month year"
+                  aria-required="true"
+                  aria-invalid={shouldShowValidationMessage('dateOfBirth') && getFieldValidationMessage('dateOfBirth', formData.dateOfBirth) ? 'true' : 'false'}
+                  aria-describedby={shouldShowValidationMessage('dateOfBirth') && getFieldValidationMessage('dateOfBirth', formData.dateOfBirth) ? 'dateOfBirth-error' : undefined}
                 />
                 {shouldShowValidationMessage('dateOfBirth') && getFieldValidationMessage('dateOfBirth', formData.dateOfBirth) && (
-                  <span className="validation-warning">{getFieldValidationMessage('dateOfBirth', formData.dateOfBirth)}</span>
+                  <span className="validation-warning" id="dateOfBirth-error" role="alert" aria-live="polite">
+                    {getFieldValidationMessage('dateOfBirth', formData.dateOfBirth)}
+                  </span>
                 )}
               </div>
 
@@ -569,9 +596,15 @@ const Test: React.FC = () => {
                   onBlur={() => handleFieldBlur('email')}
                   onClick={() => handleClick('email')}
                   className={shouldShowValidationMessage('email') && getFieldValidationMessage('email', formData.email) ? 'error' : ''}
+                  aria-label="Email Address"
+                  aria-required="true"
+                  aria-invalid={shouldShowValidationMessage('email') && getFieldValidationMessage('email', formData.email) ? 'true' : 'false'}
+                  aria-describedby={shouldShowValidationMessage('email') && getFieldValidationMessage('email', formData.email) ? 'email-error' : undefined}
                 />
                 {shouldShowValidationMessage('email') && getFieldValidationMessage('email', formData.email) && (
-                  <span className="validation-warning">{getFieldValidationMessage('email', formData.email)}</span>
+                  <span className="validation-warning" id="email-error" role="alert" aria-live="polite">
+                    {getFieldValidationMessage('email', formData.email)}
+                  </span>
                 )}
               </div>
 
@@ -586,9 +619,15 @@ const Test: React.FC = () => {
                   onBlur={() => handleFieldBlur('password')}
                   onClick={() => handleClick('password')}
                   className={shouldShowValidationMessage('password') && getFieldValidationMessage('password', formData.password) ? 'error' : ''}
+                  aria-label="Password - must be at least 8 characters with uppercase, lowercase, and numbers"
+                  aria-required="true"
+                  aria-invalid={shouldShowValidationMessage('password') && getFieldValidationMessage('password', formData.password) ? 'true' : 'false'}
+                  aria-describedby={shouldShowValidationMessage('password') && getFieldValidationMessage('password', formData.password) ? 'password-error' : undefined}
                 />
                 {shouldShowValidationMessage('password') && getFieldValidationMessage('password', formData.password) && (
-                  <span className="validation-warning">{getFieldValidationMessage('password', formData.password)}</span>
+                  <span className="validation-warning" id="password-error" role="alert" aria-live="polite">
+                    {getFieldValidationMessage('password', formData.password)}
+                  </span>
                 )}
               </div>
 
@@ -603,18 +642,33 @@ const Test: React.FC = () => {
                   onBlur={() => handleFieldBlur('confirmPassword')}
                   onClick={() => handleClick('confirmPassword')}
                   className={shouldShowValidationMessage('confirmPassword') && getFieldValidationMessage('confirmPassword', formData.confirmPassword) ? 'error' : ''}
+                  aria-label="Confirm Password - retype your password"
+                  aria-required="true"
+                  aria-invalid={shouldShowValidationMessage('confirmPassword') && getFieldValidationMessage('confirmPassword', formData.confirmPassword) ? 'true' : 'false'}
+                  aria-describedby={shouldShowValidationMessage('confirmPassword') && getFieldValidationMessage('confirmPassword', formData.confirmPassword) ? 'confirmPassword-error' : undefined}
                 />
                 {shouldShowValidationMessage('confirmPassword') && getFieldValidationMessage('confirmPassword', formData.confirmPassword) && (
-                  <span className="validation-warning">{getFieldValidationMessage('confirmPassword', formData.confirmPassword)}</span>
+                  <span className="validation-warning" id="confirmPassword-error" role="alert" aria-live="polite">
+                    {getFieldValidationMessage('confirmPassword', formData.confirmPassword)}
+                  </span>
                 )}
               </div>
 
               <div className="form-actions">
-                <button type="button" className="cancel-button" onClick={handleCancel}>Cancel</button>
+                <button 
+                  type="button" 
+                  className="cancel-button" 
+                  onClick={handleCancel}
+                  aria-label="Cancel registration and return to start"
+                >
+                  Cancel
+                </button>
                 <button 
                   type="submit" 
                   className={`register-button ${!isFormValid() ? 'disabled' : ''}`}
                   disabled={!isFormValid()}
+                  aria-label={!isFormValid() ? 'Register button disabled - please complete all fields correctly' : 'Register your account'}
+                  aria-disabled={!isFormValid()}
                 >
                   Register
                 </button>
@@ -623,52 +677,75 @@ const Test: React.FC = () => {
           </div>
 
           {/* Activity Monitor */}
-          <div className="activity-monitor">
+          <div className="activity-monitor" role="complementary" aria-label="Activity tracking metrics">
             <h3>Activity monitor</h3>
             
             {/* Time Warning Display */}
             {secondsElapsed >= 150 && secondsElapsed < 180 && (
-              <div className="time-warning" style={{
-                backgroundColor: '#fff3cd',
-                border: '1px solid #ffeaa7',
-                borderRadius: '4px',
-                padding: '8px',
-                marginBottom: '10px',
-                color: '#856404',
-                fontSize: '14px',
-                fontWeight: 'bold'
-              }}>
+              <div 
+                className="time-warning" 
+                role="alert" 
+                aria-live="assertive"
+                style={{
+                  backgroundColor: '#fff3cd',
+                  border: '1px solid #ffeaa7',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  marginBottom: '10px',
+                  color: '#856404',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
                 ⚠️ Warning: You have {180 - secondsElapsed} seconds remaining before the session times out!
               </div>
             )}
 
-            <div className="metrics-grid">
+            <div className="metrics-grid" role="status" aria-live="polite">
               <div className="metric-item">
                 <span className="metric-label">Task timer:</span>
-                <span className="metric-value" style={{
-                  color: secondsElapsed >= 150 ? (secondsElapsed >= 180 ? '#dc3545' : '#fd7e14') : 'inherit'
-                }}>{activityMetrics.taskTime}</span>
+                <span 
+                  className="metric-value" 
+                  aria-label={`Task time elapsed: ${activityMetrics.taskTime}`}
+                  style={{
+                    color: secondsElapsed >= 150 ? (secondsElapsed >= 180 ? '#dc3545' : '#fd7e14') : 'inherit'
+                  }}
+                >
+                  {activityMetrics.taskTime}
+                </span>
               </div>
               <div className="metric-item">
                 <span className="metric-label">Steps:</span>
-                <span className="metric-value">{activityMetrics.steps}</span>
+                <span className="metric-value" aria-label={`Steps taken: ${activityMetrics.steps}`}>
+                  {activityMetrics.steps}
+                </span>
               </div>
               <div className="metric-item">
                 <span className="metric-label">Backtracks:</span>
-                <span className="metric-value">{activityMetrics.backtracks}</span>
+                <span className="metric-value" aria-label={`Backtracks count: ${activityMetrics.backtracks}`}>
+                  {activityMetrics.backtracks}
+                </span>
               </div>
               <div className="metric-item">
                 <span className="metric-label">Errors:</span>
-                <span className="metric-value">{activityMetrics.errors}</span>
+                <span className="metric-value" aria-label={`Errors count: ${activityMetrics.errors}`}>
+                  {activityMetrics.errors}
+                </span>
               </div>
               <div className="metric-item">
                 <span className="metric-label">Extra clicks:</span>
-                <span className="metric-value">{extraClicks}</span>
+                <span className="metric-value" aria-label={`Extra clicks count: ${extraClicks}`}>
+                  {extraClicks}
+                </span>
               </div>
             </div>
 
             {shouldShowSeeDetailsButton() && (
-              <button onClick={seeDetails} className="see-details-button">
+              <button 
+                onClick={seeDetails} 
+                className="see-details-button"
+                aria-label="View detailed analytics for this session"
+              >
                 See details
               </button>
             )}

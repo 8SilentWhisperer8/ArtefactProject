@@ -1,0 +1,12 @@
+/* 
+ * Main Styles Entry Point
+ * This file can be used to import all global styles in one place
+ * Currently imported separately in main.tsx for better code splitting
+ */
+
+/* Global Styles & Variables */
+@import './global/variables.css';
+@import './global/index.css';
+
+/* App Layout */
+@import './App.css';

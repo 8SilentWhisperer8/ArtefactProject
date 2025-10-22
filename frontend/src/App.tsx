@@ -3,7 +3,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import Test from './pages/Test';
 import Dashboard from './pages/Dashboard';
-import './App.css';
+import './styles/App.css';
 
 function App() {
   return (
